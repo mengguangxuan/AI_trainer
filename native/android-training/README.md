@@ -49,4 +49,4 @@ app/src/main/assets/pose_landmarker_lite.task
 ../../third_party/mediapipe-samples/README.md
 ```
 
-当前包名仍是示例包名，等待 D 端 Flutter 工程的最终 `applicationId` 后统一迁移。不要在两个工程中分别发明包名。
+原生源码保留上游示例 namespace，Flutter 产品包通过 `android/trainingbridge` library 模块引用它；最终 APK 的 `applicationId` 仍由 Flutter 宿主控制。这样既保留第三方来源边界，也避免复制两套训练代码。

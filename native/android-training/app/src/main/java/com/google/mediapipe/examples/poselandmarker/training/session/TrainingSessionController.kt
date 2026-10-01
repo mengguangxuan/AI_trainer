@@ -10,6 +10,7 @@ enum class TrainingSessionState {
     PAUSED,
     COMPLETED,
     CANCELLED,
+    INTERRUPTED,
 }
 
 data class TrainingSessionSnapshot(
@@ -37,7 +38,6 @@ class TrainingSessionController(
     var repetitions: Int = 0
         private set
 
-    private var startedAtWallMs: Long? = null
     private var startedAtElapsedMs: Long? = null
     private var pauseStartedAtElapsedMs: Long? = null
     private var totalPausedMs: Long = 0L
@@ -47,7 +47,6 @@ class TrainingSessionController(
         check(state == TrainingSessionState.PREPARING) {
             "Session can only start from PREPARING"
         }
-        startedAtWallMs = currentTimeMs()
         startedAtElapsedMs = elapsedRealtimeMs()
         state = TrainingSessionState.ACTIVE
     }
@@ -95,19 +94,19 @@ class TrainingSessionController(
     @Synchronized
     fun cancel(): SessionResult {
         if (state == TrainingSessionState.PREPARING) {
-            val nowWall = currentTimeMs()
             state = TrainingSessionState.CANCELLED
-            return SessionResult(
-                sessionId = launchArgs.sessionId,
-                exercise = launchArgs.exercise,
-                actualReps = 0,
-                status = TrainingResultStatus.CANCELLED,
-                startedAtMs = nowWall,
-                endedAtMs = nowWall,
-                durationMs = 0L,
-            )
+            return resultBeforeStart(TrainingResultStatus.CANCELLED)
         }
         return finish(TrainingResultStatus.CANCELLED)
+    }
+
+    @Synchronized
+    fun interrupt(): SessionResult {
+        if (state == TrainingSessionState.PREPARING) {
+            state = TrainingSessionState.INTERRUPTED
+            return resultBeforeStart(TrainingResultStatus.INTERRUPTED)
+        }
+        return finish(TrainingResultStatus.INTERRUPTED)
     }
 
     @Synchronized
@@ -119,6 +118,17 @@ class TrainingSessionController(
         activeDurationMs = activeDurationAt(elapsedRealtimeMs()),
     )
 
+    private fun resultBeforeStart(status: TrainingResultStatus) = SessionResult(
+        sessionId = launchArgs.sessionId,
+        exercise = launchArgs.exercise,
+        actualReps = 0,
+        targetReps = launchArgs.targetReps,
+        status = status,
+        finishedAtMs = currentTimeMs(),
+        durationMs = 0L,
+        includeExercise = false,
+    )
+
     private fun finish(status: TrainingResultStatus): SessionResult {
         check(state == TrainingSessionState.ACTIVE || state == TrainingSessionState.PAUSED) {
             "Only an active or paused session can finish"
@@ -128,14 +138,15 @@ class TrainingSessionController(
             sessionId = launchArgs.sessionId,
             exercise = launchArgs.exercise,
             actualReps = repetitions,
+            targetReps = launchArgs.targetReps,
             status = status,
-            startedAtMs = checkNotNull(startedAtWallMs),
-            endedAtMs = currentTimeMs(),
+            finishedAtMs = currentTimeMs(),
             durationMs = activeDurationAt(nowElapsed),
         )
         state = when (status) {
             TrainingResultStatus.COMPLETED -> TrainingSessionState.COMPLETED
             TrainingResultStatus.CANCELLED -> TrainingSessionState.CANCELLED
+            TrainingResultStatus.INTERRUPTED -> TrainingSessionState.INTERRUPTED
         }
         return result
     }

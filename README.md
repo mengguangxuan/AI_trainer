@@ -7,7 +7,7 @@ C、D 两端共同维护的移动端集成仓库。最终形态以 Flutter 产�
 - D 端 Flutter 产品工程已合入，画像、首页、计划、饮食、总结和历史流程可用；模拟训练闭环已在小米 15 Pro 真机验证；
 - C 端 Android 原型位于 `native/android-training/`，支持 MediaPipe 姿态识别、深蹲/俯卧撑计数纠错以及完整训练会话生命周期；
 - 原生会话支持暂停、继续、完成和取消，实际训练时长扣除暂停与后台时间；
-- Flutter MethodChannel 与真实训练闭环正在按已确认的 v1 协议接入；
+- Flutter MethodChannel 与原生训练页已按冻结的 v1 协议接入，App 默认使用真实训练入口；
 - Agent 接口尚未接入，未实现的总结和质量字段保持为空；
 - 已保留 Google MediaPipe 示例的 Apache 2.0 许可证和来源说明；
 - iOS 因当前缺少 macOS/Xcode 硬件条件，不在本阶段范围内。
@@ -41,7 +41,7 @@ Flutter 首页
     → Flutter 总结页
 ```
 
-第一轮先打通 `squat`；验收通过后，同一接口开放 `push_up`。
+`squat` 与 `push_up` 共用同一冻结接口；当前 D 的计划入口先使用 `squat`，后续增加俯卧撑产品入口时无需修改桥协议。
 
 ## D 端 Flutter 工程运行
 

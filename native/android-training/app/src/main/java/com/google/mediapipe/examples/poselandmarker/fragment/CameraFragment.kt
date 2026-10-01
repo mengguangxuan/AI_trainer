@@ -443,6 +443,9 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
             preview?.setSurfaceProvider(fragmentCameraBinding.viewFinder.surfaceProvider)
         } catch (exc: Exception) {
             Log.e(TAG, "Use case binding failed", exc)
+            trainingActivity.onTrainingUnavailable(
+                "Camera use case binding failed: ${exc.message.orEmpty()}"
+            )
         }
     }
 
@@ -587,6 +590,8 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
                 fragmentCameraBinding.bottomSheetLayout.spinnerDelegate.setSelection(
                     PoseLandmarkerHelper.DELEGATE_CPU, false
                 )
+            } else {
+                trainingActivity.onTrainingUnavailable(error)
             }
         }
     }

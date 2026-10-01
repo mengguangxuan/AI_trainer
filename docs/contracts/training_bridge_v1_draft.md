@@ -1,6 +1,6 @@
-# Training Bridge v1（冻结候选）
+# Training Bridge v1（已冻结）
 
-> 状态：2026-10-01 C 侧已按 D 端现有 Dart 模型整理。双方确认本文件后再修改 Kotlin、Dart 和测试；确认时将状态改为“已冻结”。
+> 状态：2026-10-01 C、D 双方确认。Kotlin、Dart 和测试必须保持本文件定义的字段与语义。
 
 ## 1. 桥入口
 
@@ -120,9 +120,9 @@ D 端只有在 `status=completed` 时才保存为完成训练。`cancelled` 和 
 
 这些限制不会阻塞首轮深蹲和俯卧撑闭环。未来若加入多动作、多组或 Agent 聚合，应提升协议版本，不能静默改变 v1 字段语义。
 
-## 6. 双方确认项
+## 6. 双方实施项
 
-确认后，C 与 D 应在同一提交基线上分别完成：
+C 与 D 在同一提交基线上完成：
 
 1. C 将 Kotlin 契约改为本文件的数字版本、通道名和嵌套结构，并实现 `completed/cancelled/interrupted` 返回；
 2. D 保持现有 `TrainingLaunchArgs/SessionResult` 外部结构，将所有动作 ID 统一为 `squat/push_up`；

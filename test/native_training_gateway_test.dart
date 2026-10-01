@@ -84,4 +84,55 @@ void main() {
       throwsFormatException,
     );
   });
+
+  testWidgets('decodes cancellation without claiming a completed set',
+      (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+      context = value;
+      return const SizedBox();
+    })));
+    messenger.setMockMethodCallHandler(channel, (call) async => {
+          'schema_version': 1,
+          'session_id': 'cancel_1',
+          'status': 'cancelled',
+          'finished_at': '2026-10-01T20:00:00+08:00',
+          'duration_seconds': 5,
+          'exercises': [
+            <Object?, Object?>{
+              'exercise_id': 'squat',
+              'completed_sets': 0,
+              'completed_reps': 2,
+              'quality_trend': null,
+              'main_error_code': null,
+            },
+          ],
+          'agent_summary': null,
+          'next_plan_changed': false,
+          'source': 'real',
+        });
+
+    final result = await NativeTrainingGateway(channel: channel)
+        .start(context, args);
+
+    expect(result?.status, 'cancelled');
+    expect(result?.isCompleted, isFalse);
+    expect(result?.exercises.single.completedSets, 0);
+    expect(result?.exercises.single.completedReps, 2);
+  });
+
+  testWidgets('rejects a null response because back must return cancelled',
+      (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+      context = value;
+      return const SizedBox();
+    })));
+    messenger.setMockMethodCallHandler(channel, (call) async => null);
+
+    await expectLater(
+      NativeTrainingGateway(channel: channel).start(context, args),
+      throwsFormatException,
+    );
+  });
 }

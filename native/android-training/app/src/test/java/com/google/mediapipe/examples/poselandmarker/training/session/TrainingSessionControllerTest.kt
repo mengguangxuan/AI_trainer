@@ -2,6 +2,7 @@ package com.google.mediapipe.examples.poselandmarker.training.session
 
 import com.google.mediapipe.examples.poselandmarker.training.ExerciseKind
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingLaunchArgs
+import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingMode
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingResultStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,8 +17,13 @@ class TrainingSessionControllerTest {
     private fun controller(targetReps: Int = 5) = TrainingSessionController(
         launchArgs = TrainingLaunchArgs(
             sessionId = "session_test",
+            planItemId = "plan_test",
+            trainingMode = TrainingMode.PLANNED,
             exercise = ExerciseKind.SQUAT,
+            targetSets = 1,
             targetReps = targetReps,
+            restSeconds = 0,
+            coachName = "AI 私教",
         ),
         elapsedRealtimeMs = { elapsedMs },
         currentTimeMs = { wallMs },
@@ -80,7 +86,18 @@ class TrainingSessionControllerTest {
 
         assertEquals(TrainingResultStatus.CANCELLED, result.status)
         assertEquals(0L, result.durationMs)
-        assertEquals(result.startedAtMs, result.endedAtMs)
+        assertTrue((result.toMap()["exercises"] as List<*>).isEmpty())
+    }
+
+    @Test
+    fun interruptionBeforeCameraStartsReturnsInterruptedWithoutExercise() {
+        val controller = controller()
+
+        val result = controller.interrupt()
+
+        assertEquals(TrainingResultStatus.INTERRUPTED, result.status)
+        assertEquals(TrainingSessionState.INTERRUPTED, controller.state)
+        assertTrue((result.toMap()["exercises"] as List<*>).isEmpty())
     }
 
     @Test

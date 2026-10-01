@@ -17,6 +17,7 @@ import com.google.mediapipe.examples.poselandmarker.training.TrainingSnapshot
 import com.google.mediapipe.examples.poselandmarker.training.bridge.SessionResult
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingBridgeContract
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingLaunchArgs
+import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingMode
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingResultStatus
 import com.google.mediapipe.examples.poselandmarker.training.session.TrainingSessionController
 import com.google.mediapipe.examples.poselandmarker.training.session.TrainingSessionSnapshot
@@ -100,8 +101,13 @@ open class TrainingActivity : AppCompatActivity() {
         check(allowsExerciseSwitching) { "Exercise switching is disabled for launched sessions" }
         launchArgs = TrainingLaunchArgs(
             sessionId = "local-prototype-${System.currentTimeMillis()}",
+            planItemId = null,
+            trainingMode = TrainingMode.FREE,
             exercise = exercise,
+            targetSets = 1,
             targetReps = DEFAULT_TARGET_REPS,
+            restSeconds = 0,
+            coachName = DEFAULT_COACH_NAME,
         )
         startNewSession(launchArgs)
         ensureSessionStarted()
@@ -136,10 +142,21 @@ open class TrainingActivity : AppCompatActivity() {
 
     fun onCameraPermissionDenied() {
         if (!allowsExerciseSwitching) {
-            finishWithError(
-                code = TrainingBridgeContract.ERROR_CAMERA_PERMISSION_DENIED,
-                message = "Camera permission was denied",
+            finishWithResult(sessionController.interrupt())
+        }
+    }
+
+    fun onTrainingUnavailable(message: String) {
+        Log.e(SESSION_EVENT_TAG, message)
+        if (
+            !allowsExerciseSwitching &&
+            sessionController.state in setOf(
+                TrainingSessionState.PREPARING,
+                TrainingSessionState.ACTIVE,
+                TrainingSessionState.PAUSED,
             )
+        ) {
+            finishWithResult(sessionController.interrupt())
         }
     }
 
@@ -195,21 +212,14 @@ open class TrainingActivity : AppCompatActivity() {
     }
 
     private fun finishWithResult(result: SessionResult) {
-        val data = Intent().apply {
-            result.toMap().forEach { (key, value) ->
-                when (value) {
-                    is String -> putExtra(key, value)
-                    is Int -> putExtra(key, value)
-                    is Long -> putExtra(key, value)
-                }
-            }
-        }
+        val resultJson = JSONObject(result.toMap()).toString()
+        val data = Intent().putExtra(EXTRA_RESULT_JSON, resultJson)
         val resultCode = if (result.status == TrainingResultStatus.COMPLETED) {
             Activity.RESULT_OK
         } else {
             Activity.RESULT_CANCELED
         }
-        Log.i(SESSION_EVENT_TAG, JSONObject(result.toMap()).toString())
+        Log.i(SESSION_EVENT_TAG, resultJson)
         setResult(resultCode, data)
         finish()
     }
@@ -228,17 +238,32 @@ open class TrainingActivity : AppCompatActivity() {
         if (!hasExternalLaunchArgs(value)) {
             return TrainingLaunchArgs(
                 sessionId = "local-prototype-${System.currentTimeMillis()}",
+                planItemId = null,
+                trainingMode = TrainingMode.FREE,
                 exercise = ExerciseKind.SQUAT,
+                targetSets = 1,
                 targetReps = DEFAULT_TARGET_REPS,
+                restSeconds = 0,
+                coachName = DEFAULT_COACH_NAME,
             )
         }
-        return TrainingLaunchArgs.fromMap(
-            mapOf(
-                "schema_version" to value.getStringExtra(EXTRA_SCHEMA_VERSION),
-                "session_id" to value.getStringExtra(EXTRA_SESSION_ID),
-                "exercise_id" to value.getStringExtra(EXTRA_EXERCISE_ID),
-                "target_reps" to value.getIntExtra(EXTRA_TARGET_REPS, 0),
-            )
+        val exerciseId = value.getStringExtra(EXTRA_EXERCISE_ID)
+        val exercise = ExerciseKind.values().firstOrNull { it.wireValue == exerciseId }
+            ?: throw IllegalArgumentException("Unsupported exercise_id: $exerciseId")
+        val trainingModeValue = value.getStringExtra(EXTRA_TRAINING_MODE)
+        val trainingMode = TrainingMode.values().firstOrNull {
+            it.wireValue == trainingModeValue
+        } ?: throw IllegalArgumentException("Unsupported training_mode: $trainingModeValue")
+        return TrainingLaunchArgs(
+            schemaVersion = value.getIntExtra(EXTRA_SCHEMA_VERSION, 0),
+            sessionId = value.getStringExtra(EXTRA_SESSION_ID).orEmpty(),
+            planItemId = value.getStringExtra(EXTRA_PLAN_ITEM_ID),
+            trainingMode = trainingMode,
+            exercise = exercise,
+            targetSets = value.getIntExtra(EXTRA_TARGET_SETS, 0),
+            targetReps = value.getIntExtra(EXTRA_TARGET_REPS, 0),
+            restSeconds = value.getIntExtra(EXTRA_REST_SECONDS, -1),
+            coachName = value.getStringExtra(EXTRA_COACH_NAME).orEmpty(),
         )
     }
 
@@ -251,20 +276,32 @@ open class TrainingActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_SCHEMA_VERSION = "schema_version"
         const val EXTRA_SESSION_ID = "session_id"
+        const val EXTRA_PLAN_ITEM_ID = "plan_item_id"
+        const val EXTRA_TRAINING_MODE = "training_mode"
         const val EXTRA_EXERCISE_ID = "exercise_id"
+        const val EXTRA_TARGET_SETS = "target_sets"
         const val EXTRA_TARGET_REPS = "target_reps"
+        const val EXTRA_REST_SECONDS = "rest_seconds"
+        const val EXTRA_COACH_NAME = "coach_name"
+        const val EXTRA_RESULT_JSON = "session_result_json"
         const val EXTRA_ERROR_CODE = "error_code"
         const val EXTRA_ERROR_MESSAGE = "error_message"
 
         private const val DEFAULT_TARGET_REPS = 10
+        private const val DEFAULT_COACH_NAME = "AI 私教"
         private const val SESSION_EVENT_TAG = "FitnessCoachSession"
 
         fun createIntent(context: Context, args: TrainingLaunchArgs): Intent =
             Intent(context, TrainingActivity::class.java).apply {
                 putExtra(EXTRA_SCHEMA_VERSION, args.schemaVersion)
                 putExtra(EXTRA_SESSION_ID, args.sessionId)
+                args.planItemId?.let { putExtra(EXTRA_PLAN_ITEM_ID, it) }
+                putExtra(EXTRA_TRAINING_MODE, args.trainingMode.wireValue)
                 putExtra(EXTRA_EXERCISE_ID, args.exercise.wireValue)
+                putExtra(EXTRA_TARGET_SETS, args.targetSets)
                 putExtra(EXTRA_TARGET_REPS, args.targetReps)
+                putExtra(EXTRA_REST_SECONDS, args.restSeconds)
+                putExtra(EXTRA_COACH_NAME, args.coachName)
             }
     }
 }

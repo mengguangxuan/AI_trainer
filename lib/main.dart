@@ -6,7 +6,7 @@ import 'features/product/data/local_product_repository.dart';
 import 'features/product/data/template_coach_repository.dart';
 import 'features/product/domain/product_controller.dart';
 import 'features/product/presentation/product_shell.dart';
-import 'mocks/mock_training_gateway.dart';
+import 'features/training_contract/native_training_gateway.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +29,7 @@ class DStarterApp extends StatelessWidget {
         theme: AppTheme.light,
         home: ProductShell(
           controller: controller,
-          training: MockTrainingGateway(),
+          training: NativeTrainingGateway(),
         ),
       );
 }

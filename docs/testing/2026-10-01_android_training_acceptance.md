@@ -3,7 +3,7 @@
 ## 自动验证
 
 - 命令：`gradlew.bat --no-daemon testDebugUnitTest assembleDebug`
-- 结果：构建成功；23 项单元测试全部通过，0 失败、0 错误。
+- 结果：冻结协议适配前构建成功；23 项单元测试全部通过。冻结协议适配后扩展为 26 项测试并重新通过，0 失败、0 错误。
 - 覆盖范围：深蹲和俯卧撑动作分析、桥接参数与结果、会话状态、暂停时长扣除、取消以及纠错事件配对。
 - APK：`native/android-training/app/build/outputs/apk/debug/app-debug.apk`
 
@@ -15,7 +15,7 @@
 - 事件中的 `session_id` 与启动参数一致。
 - 达到 5 次目标后继续按真实动作计数到 10 次，未伪造完成结果。
 
-真机日志暴露了人物短暂离开画面时可能生成孤立 `motion.form_event end` 的问题。现已改为只对真正发出过的 `start` 生成 `end`，并增加回归测试 `suppressedErrorStartDoesNotProduceOrphanEndEvents`；修复后的完整构建和 23 项测试已通过。
+真机日志暴露了人物短暂离开画面时可能生成孤立 `motion.form_event end` 的问题。现已改为只对真正发出过的 `start` 生成 `end`，并增加回归测试 `suppressedErrorStartDoesNotProduceOrphanEndEvents`；修复后的完整构建已通过。
 
 ## 待完成的真机交互验收
 
@@ -29,4 +29,4 @@
 
 ## 范围说明
 
-iOS 因当前缺少 macOS/Xcode 硬件条件，不纳入本阶段开发和验收。Flutter MethodChannel 适配等待 D 端工程到位；Android 原生启动参数、结果返回和错误字段已经预留。
+iOS 因当前缺少 macOS/Xcode 硬件条件，不纳入本阶段开发和验收。Flutter MethodChannel 已按冻结协议接入同一份原生代码；合并后的 Flutter 单 APK 仍需在具备 Flutter SDK 的环境完成构建和真机验收。
