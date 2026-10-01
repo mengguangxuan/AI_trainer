@@ -70,11 +70,12 @@ class TrainingBridgeContractTest {
             status = TrainingResultStatus.COMPLETED,
             startedAtMs = 1_000L,
             endedAtMs = 43_315L,
+            durationMs = 40_000L,
         ).toMap()
 
         assertEquals(8, result["actual_reps"])
         assertEquals("completed", result["status"])
-        assertEquals(42_315L, result["duration_ms"])
+        assertEquals(40_000L, result["duration_ms"])
         assertEquals("squat_0.1", result["exercise_spec_version"])
     }
 
@@ -88,6 +89,7 @@ class TrainingBridgeContractTest {
                 status = TrainingResultStatus.CANCELLED,
                 startedAtMs = 2_000L,
                 endedAtMs = 1_000L,
+                durationMs = 0L,
             )
         }
     }

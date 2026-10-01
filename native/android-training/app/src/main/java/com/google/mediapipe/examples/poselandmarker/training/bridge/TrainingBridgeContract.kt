@@ -70,6 +70,7 @@ data class SessionResult(
     val status: TrainingResultStatus,
     val startedAtMs: Long,
     val endedAtMs: Long,
+    val durationMs: Long,
     val algorithmVersion: String = "motion_rules_0.1",
     val exerciseSpecVersion: String = "${exercise.wireValue}_0.1",
     val schemaVersion: String = TrainingBridgeContract.SCHEMA_VERSION,
@@ -82,11 +83,10 @@ data class SessionResult(
         require(actualReps >= 0) { "actual_reps must not be negative" }
         require(startedAtMs >= 0) { "started_at_ms must not be negative" }
         require(endedAtMs >= startedAtMs) { "ended_at_ms must not precede started_at_ms" }
+        require(durationMs >= 0) { "duration_ms must not be negative" }
         require(algorithmVersion.isNotBlank()) { "algorithm_version must not be blank" }
         require(exerciseSpecVersion.isNotBlank()) { "exercise_spec_version must not be blank" }
     }
-
-    val durationMs: Long get() = endedAtMs - startedAtMs
 
     fun toMap(): Map<String, Any> = linkedMapOf(
         "schema_version" to schemaVersion,
@@ -115,4 +115,3 @@ private fun Map<*, *>.requiredPositiveInt(key: String): Int {
     }
     return longValue.toInt()
 }
-

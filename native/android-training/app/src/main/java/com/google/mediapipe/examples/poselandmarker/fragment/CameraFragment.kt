@@ -38,6 +38,7 @@ import androidx.navigation.Navigation
 import com.google.mediapipe.examples.poselandmarker.PoseLandmarkerHelper
 import com.google.mediapipe.examples.poselandmarker.MainViewModel
 import com.google.mediapipe.examples.poselandmarker.R
+import com.google.mediapipe.examples.poselandmarker.TrainingActivity
 import com.google.mediapipe.examples.poselandmarker.databinding.FragmentCameraBinding
 import com.google.mediapipe.examples.poselandmarker.training.ExerciseAnalyzer
 import com.google.mediapipe.examples.poselandmarker.training.ExerciseKind
@@ -46,6 +47,8 @@ import com.google.mediapipe.examples.poselandmarker.training.Landmark2D
 import com.google.mediapipe.examples.poselandmarker.training.MotionDirection
 import com.google.mediapipe.examples.poselandmarker.training.MotionPhase
 import com.google.mediapipe.examples.poselandmarker.training.TrainingSnapshot
+import com.google.mediapipe.examples.poselandmarker.training.session.TrainingSessionSnapshot
+import com.google.mediapipe.examples.poselandmarker.training.session.TrainingSessionState
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -73,6 +76,9 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
     private var cameraFacing = CameraSelector.LENS_FACING_BACK
     private val exerciseAnalyzer = ExerciseAnalyzer()
 
+    private val trainingActivity: TrainingActivity
+        get() = requireActivity() as TrainingActivity
+
     /** Blocking ML operations are performed using this executor */
     private lateinit var backgroundExecutor: ExecutorService
 
@@ -99,6 +105,7 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
 
     override fun onPause() {
         super.onPause()
+        exerciseAnalyzer.cancelCurrentMotionCycle()
         if(this::poseLandmarkerHelper.isInitialized) {
             viewModel.setMinPoseDetectionConfidence(poseLandmarkerHelper.minPoseDetectionConfidence)
             viewModel.setMinPoseTrackingConfidence(poseLandmarkerHelper.minPoseTrackingConfidence)
@@ -135,6 +142,7 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        trainingActivity.ensureSessionStarted()
 
         // Initialize our background executor
         backgroundExecutor = Executors.newSingleThreadExecutor()
@@ -173,6 +181,7 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
         }
         fragmentCameraBinding.resetButton.setOnClickListener {
             exerciseAnalyzer.reset()
+            trainingActivity.restartDemoSession(exerciseAnalyzer.exercise)
             resetTrainingHud()
         }
         fragmentCameraBinding.switchCameraButton.setOnClickListener {
@@ -183,12 +192,33 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
             }
             bindCameraUseCases()
         }
-        updateExerciseButtons(ExerciseKind.SQUAT)
+        fragmentCameraBinding.pauseButton.setOnClickListener {
+            exerciseAnalyzer.cancelCurrentMotionCycle()
+            renderSessionSnapshot(trainingActivity.togglePause())
+        }
+        fragmentCameraBinding.finishButton.setOnClickListener {
+            trainingActivity.completeTraining()
+        }
+        fragmentCameraBinding.cancelButton.setOnClickListener {
+            trainingActivity.requestCancelTraining()
+        }
+
+        val initialExercise = trainingActivity.launchArgs.exercise
+        exerciseAnalyzer.selectExercise(initialExercise)
+        val switchingAllowed = trainingActivity.allowsExerciseSwitching
+        fragmentCameraBinding.squatButton.isEnabled = switchingAllowed
+        fragmentCameraBinding.pushUpButton.isEnabled = switchingAllowed
+        fragmentCameraBinding.exerciseSelectorRow.visibility =
+            if (switchingAllowed) View.VISIBLE else View.GONE
+        fragmentCameraBinding.resetButton.visibility =
+            if (switchingAllowed) View.VISIBLE else View.GONE
+        updateExerciseButtons(initialExercise)
         resetTrainingHud()
     }
 
     private fun selectExercise(exercise: ExerciseKind) {
         exerciseAnalyzer.selectExercise(exercise)
+        trainingActivity.restartDemoSession(exercise)
         updateExerciseButtons(exercise)
         resetTrainingHud()
     }
@@ -208,6 +238,7 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
         fragmentCameraBinding.feedbackValue.setBackgroundColor(
             ContextCompat.getColor(requireContext(), R.color.mp_color_primary_dark)
         )
+        renderSessionSnapshot(trainingActivity.sessionSnapshot())
     }
 
     private fun initBottomSheetControls() {
@@ -436,6 +467,7 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
     override fun onResults(
         resultBundle: PoseLandmarkerHelper.ResultBundle
     ) {
+        val host = activity as? TrainingActivity ?: return
         val poseResult = resultBundle.results.first()
         val landmarks = poseResult.landmarks().firstOrNull()?.map {
             Landmark2D(
@@ -445,13 +477,19 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
                 presence = it.presence().orElse(1f),
             )
         }.orEmpty()
-        val trainingSnapshot = exerciseAnalyzer.process(
-            landmarks = landmarks,
-            timestampMs = System.currentTimeMillis(),
-            frameWidth = resultBundle.inputImageWidth,
-            frameHeight = resultBundle.inputImageHeight,
-        )
-        trainingSnapshot.event?.let { event -> Log.i(EVENT_TAG, event.toJson()) }
+        val trainingSnapshot = if (host.isTrainingActive()) {
+            exerciseAnalyzer.process(
+                landmarks = landmarks,
+                timestampMs = System.currentTimeMillis(),
+                frameWidth = resultBundle.inputImageWidth,
+                frameHeight = resultBundle.inputImageHeight,
+            ).also(host::onTrainingSnapshot)
+        } else {
+            null
+        }
+        trainingSnapshot?.event?.let { event ->
+            Log.i(EVENT_TAG, event.toJson(host.launchArgs.sessionId))
+        }
 
         activity?.runOnUiThread {
             if (_fragmentCameraBinding != null) {
@@ -468,8 +506,39 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
 
                 // Force a redraw
                 fragmentCameraBinding.overlay.invalidate()
-                renderTrainingSnapshot(trainingSnapshot)
+                trainingSnapshot?.let(::renderTrainingSnapshot)
+                renderSessionSnapshot(host.sessionSnapshot())
             }
+        }
+    }
+
+    private fun renderSessionSnapshot(snapshot: TrainingSessionSnapshot) {
+        val totalSeconds = snapshot.activeDurationMs / 1_000L
+        val duration = String.format(
+            Locale.US,
+            "%02d:%02d",
+            totalSeconds / 60L,
+            totalSeconds % 60L,
+        )
+        fragmentCameraBinding.sessionProgressValue.text = getString(
+            R.string.session_progress_format,
+            snapshot.repetitions,
+            snapshot.targetReps,
+            duration,
+        )
+        fragmentCameraBinding.pauseButton.text = getString(
+            if (snapshot.state == TrainingSessionState.PAUSED) {
+                R.string.action_resume
+            } else {
+                R.string.action_pause
+            }
+        )
+        if (snapshot.state == TrainingSessionState.PAUSED) {
+            fragmentCameraBinding.phaseValue.text = getString(R.string.phase_paused)
+            fragmentCameraBinding.feedbackValue.text = getString(R.string.feedback_paused)
+            fragmentCameraBinding.feedbackValue.setBackgroundColor(
+                ContextCompat.getColor(requireContext(), R.color.mp_color_primary_dark)
+            )
         }
     }
 

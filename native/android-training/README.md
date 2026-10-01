@@ -6,7 +6,8 @@
 
 ```text
 CameraX → MediaPipe Pose Landmarker → ExerciseAnalyzer
-        → 骨架和训练 HUD          → 结构化事件日志
+        → 骨架和训练 HUD          → TrainingSessionController
+        → 结构化事件日志           → SessionResult
 ```
 
 当前支持：
@@ -15,6 +16,9 @@ CameraX → MediaPipe Pose Landmarker → ExerciseAnalyzer
 - 俯卧撑 `push_up`；
 - 次数、阶段、角度和基础纠错；
 - 前后摄像头；
+- 单次训练的准备、训练、暂停、继续、完成和取消状态；
+- 目标次数、真实次数和扣除暂停时间后的实际训练时长；
+- 可由未来 Flutter Gateway 启动的 `TrainingActivity` 及 Activity result；
 - 原始视频不上传；
 - `motion.rep_completed` 和 `motion.form_event` Logcat 事件。
 
@@ -25,7 +29,10 @@ app/src/main/java/com/google/mediapipe/examples/poselandmarker/
 ├── fragment/CameraFragment.kt
 ├── OverlayView.kt
 ├── PoseLandmarkerHelper.kt
-└── training/ExerciseAnalyzer.kt
+├── TrainingActivity.kt
+├── training/ExerciseAnalyzer.kt
+├── training/session/TrainingSessionController.kt
+└── training/bridge/TrainingBridgeContract.kt
 ```
 
 模型已经包含在：
@@ -43,4 +50,3 @@ app/src/main/assets/pose_landmarker_lite.task
 ```
 
 当前包名仍是示例包名，等待 D 端 Flutter 工程的最终 `applicationId` 后统一迁移。不要在两个工程中分别发明包名。
-

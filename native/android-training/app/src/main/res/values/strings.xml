@@ -28,6 +28,18 @@
     <string name="push_up_angle_format">肘角：%1$d°　身体直线角：%2$s</string>
     <string name="action_reset">重置</string>
     <string name="action_switch_camera">翻转</string>
+    <string name="action_pause">暂停</string>
+    <string name="action_resume">继续</string>
+    <string name="action_finish">完成训练</string>
+    <string name="action_cancel">取消训练</string>
+    <string name="action_continue_training">继续训练</string>
+    <string name="action_confirm_cancel">确认取消</string>
+    <string name="cancel_training_title">取消本次训练？</string>
+    <string name="cancel_training_message">已完成的次数会随取消结果返回，但不会计为完成训练。</string>
+    <string name="session_progress_initial">进度：0/10　用时：00:00</string>
+    <string name="session_progress_format">进度：%1$d/%2$d　用时：%3$s</string>
+    <string name="phase_paused">阶段：已暂停</string>
+    <string name="feedback_paused">训练已暂停，继续后请重新保持起始姿势</string>
     <string name="feedback_initial">请侧身并让全身进入画面，然后保持起始姿势</string>
 
     <string name="media_pipe">MediaPipe</string>

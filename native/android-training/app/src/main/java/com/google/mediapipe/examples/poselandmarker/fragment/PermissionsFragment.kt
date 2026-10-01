@@ -26,6 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.Navigation
 import com.google.mediapipe.examples.poselandmarker.R
+import com.google.mediapipe.examples.poselandmarker.TrainingActivity
 
 private val PERMISSIONS_REQUIRED = arrayOf(Manifest.permission.CAMERA)
 
@@ -48,6 +49,7 @@ class PermissionsFragment : Fragment() {
                     "Permission request denied",
                     Toast.LENGTH_LONG
                 ).show()
+                (activity as? TrainingActivity)?.onCameraPermissionDenied()
             }
         }
 
