@@ -1,16 +1,56 @@
+# Editors and operating systems
+.DS_Store
+.idea/
+*.iml
+*.swp
+.vscode/
+
+# Flutter and Dart
 .dart_tool/
+.flutter-plugins
 .flutter-plugins*
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
 build/
 coverage/
-*.iml
-.idea/
-.vscode/
+
+# Android and Gradle
 android/.gradle/
 android/.kotlin/
 android/local.properties
 android/key.properties
+**/.gradle/
+**/local.properties
+**/captures/
+**/.externalNativeBuild/
+**/.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Signing and credentials
 *.jks
 *.keystore
+*.p12
+*.mobileprovision
+google-services.json
+.env
+.env.*
+!.env.example
+
+# Apple build output and local workspace data
+**/DerivedData/
+**/Pods/
+**/xcuserdata/
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp

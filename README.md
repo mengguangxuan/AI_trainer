@@ -1,29 +1,101 @@
-# 动姿智护 D 模块起点
+# AI 健身教练移动端（C + D 集成仓库）
 
-这是一个**独立的 Flutter 原型源码**，用于在没有团队仓库的情况下先完成 D 负责的非实时产品流程。当前工作区没有 Flutter SDK，因此这里尚未编译或在真机运行；这不是已完成的比赛安装包。
+C、D 两端共同维护的移动端集成仓库。最终形态以 Flutter 产品工程为主，Android 原生模块负责 CameraX、MediaPipe、动作分析和训练结果回传。
 
-## 已实现
+## 当前状态
 
-- 首次画像填写与修改，本机保存；重启后尝试恢复。
-- 首页、今日计划、饮食建议、历史四个入口。
-- 计划中的深蹲目标通过 `TrainingLaunchArgs` 交给 `TrainingGateway`。
-- `MockTrainingGateway` 返回完成或取消两种模拟结果。
-- 总结、历史、本地连续训练天数；取消训练不会计入完成。
-- 有当前不适时模板不自动提供训练入口；未知错误码不编造解释。
-- `CoachRepository` 抽象接口，供 Agent B 的真实服务实现替换；服务失败时回退到标记过的本地模板。
+- **D 端（本分支 feature/flutter-product-pages）**：Flutter 产品工程已合入，画像/首页/计划/饮食/总结/历史全流程可用，`MockTrainingGateway` 模拟训练闭环已在小米 15 Pro（Android 16）真机验证 9/9 项通过（证据见 `docs/validation-evidence/`）。
+- **C 端（main）**：可独立构建的 Android 实时训练原型（MediaPipe 姿态识别 + 深蹲/俯卧撑计数纠错）位于 `native/android-training/`。
+- **尚未完成**：Flutter MethodChannel 桥接（`NativeTrainingGateway` Dart 侧已就绪）、真实训练闭环、Agent 接口。
+- 桥接协议字段见 `docs/contracts/training_bridge_v1_draft.md` 与 `docs/MOBILE_INTEGRATION_PLAN.md`，最终以双方确认后冻结版本为准。
+
+## 目录
+
+```text
+ai_fitness_coach/
+├── docs/
+│   ├── architecture/          架构和 C 端交接文档
+│   ├── contracts/             通信协议与 C/D 对齐文档
+│   ├── validation-evidence/   D 端验收截图（Web + 真机）
+│   └── MOBILE_INTEGRATION_PLAN.md  整合决策与验收排期
+├── lib/                       D 的 Flutter 页面、Gateway 和业务状态
+├── android/                   Flutter Android 宿主
+├── test/                      D 的单元与桥接边界测试
+├── native/
+│   └── android-training/      C 的可独立构建 Android 训练原型（基线，勿删）
+└── third_party/
+    └── mediapipe-samples/     上游来源和许可证
+```
+
+## 首轮集成目标
+
+```text
+Flutter 首页
+    → TrainingGateway.startTraining(args)
+    → Android TrainingActivity
+    → CameraFragment + ExerciseAnalyzer
+    → SessionResult
+    → Flutter 总结页
+```
+
+第一轮先打通 `squat`；验收通过后，同一接口开放 `push_up`。
+
+## D 端 Flutter 工程运行
+
+```powershell
+flutter pub get
+flutter analyze        # 当前：No issues found
+flutter test           # 当前：5/5 通过
+flutter devices
+flutter run -d <设备ID>
+```
+
+依赖：Flutter 3.47.5 / Dart 3.13.4（要求 Dart ≥3.9）。**注意：工程需与 Flutter 插件缓存（PUB_CACHE）位于同一磁盘分区**，否则 Kotlin 增量编译跨盘符会失败（Kotlin "different roots" 错误）；国内网络下 Gradle wrapper 已配置腾讯镜像。
+
+D 端真机验收要点（已在小米 15 Pro 通过）：画像保存 → 首页计划 → 模拟训练 → 总结 → 历史 → 强杀重启数据保留 → 取消不计入完成 → 勾选当前不适后训练入口消失。详见 `docs/VALIDATION.md`。
+
+## C 端 Android 原型构建
+
+Windows PowerShell：
+
+```powershell
+cd native\android-training
+powershell -ExecutionPolicy Bypass -File .\build_local.ps1
+```
+
+或者在已经配置好 JDK 21 和 Android SDK 的环境中运行：
+
+```powershell
+.\gradlew.bat --no-daemon testDebugUnitTest assembleDebug
+```
+
+APK 输出到：
+
+```text
+native/android-training/app/build/outputs/apk/debug/app-debug.apk
+```
+
+在桥接完成前，`native/android-training` 保持为可运行基线。不要直接删除它；先完成 Flutter 单 APK 的真机验收，再决定是否将其缩减为参考目录。
+
+## 提交规则
+
+- `main` 必须保持可构建、可演示；
+- C 使用 `feature/android-training-bridge`；
+- D 使用 `feature/flutter-product-pages`；
+- 不提交构建缓存、APK、`local.properties`、密钥、签名文件或真实 Token；
+- 修改桥接字段时，同时更新 `docs/contracts/`；
+- 保留第三方版权头和 `third_party/mediapipe-samples/LICENSE`。
+
+## D 端原 README（独立原型时期）
+
+<details>
+<summary>历史记录：D 模块独立原型说明（已并入本仓库）</summary>
+
+这是一个**独立的 Flutter 原型源码**，用于在没有团队仓库的情况下先完成 D 负责的非实时产品流程。已在真实 Flutter 工具链下完成编译、静态分析、单元测试与真机验收。
+
+已实现：首次画像填写与修改（本机保存、重启恢复）；首页、今日计划、饮食建议、历史四个入口；计划中的深蹲目标通过 `TrainingLaunchArgs` 交给 `TrainingGateway`；`MockTrainingGateway` 返回完成或取消两种模拟结果；总结、历史、本地连续训练天数；取消训练不计入完成；有当前不适时模板不自动提供训练入口；未知错误码不编造解释；`CoachRepository` 抽象接口供 Agent B 的真实服务实现替换。
 
 所有模板和模拟训练在界面标明来源。**没有实现摄像头、MediaPipe、WebSocket、真实 Agent API 或正式训练评分。**
-
-## 在装好 Flutter 的电脑上运行
-
-1. 将整个目录解压到一个新文件夹；在该文件夹运行 `flutter --version`，确认 Dart 至少 3.9 / Flutter 至少 3.35，运行 `flutter doctor` 检查 Android 工具链。
-2. 在该文件夹运行 `flutter create --platforms=android --project-name ai_fitness_d_starter .`，补齐本包没有的 Android 平台目录。不要使用覆盖选项；若工具询问覆盖现有 `lib`、`test` 或 `pubspec.yaml`，拒绝并检查。自动生成的默认计数器测试如存在，核对后删除。
-3. 运行 `flutter pub get`、`flutter analyze`、`flutter test`，保存原始输出。
-4. Android 手机打开开发者选项和 USB 调试，运行 `flutter devices`，再 `flutter run -d <设备ID>`。
-5. 真机走通：填写画像 → 首页/计划 → 模拟完成 → 总结 → 历史 → 退出重开确认恢复；再试“模拟中途退出”与“当前不适”。
-6. 可运行后由 C 负责构建和安装 APK：`flutter build apk --release`。正式提交包还需依比赛与团队规定处理签名和依赖清单。
-
-## 文件用途
 
 | 文件或目录 | 内容与负责人 |
 |---|---|
@@ -32,19 +104,9 @@
 | `lib/core/models/session_result.dart` | C → D 的训练结果草案，允许缺少未测量字段 |
 | `lib/core/models/training_plan.dart`、`nutrition_advice.dart` | D 展示计划与饮食的最小对象 |
 | `lib/core/theme/app_theme.dart` | D 所有的全局颜色和组件样式起点 |
-| `lib/features/product/data/local_product_repository.dart` | 本地画像及最近 30 条训练记录 |
-| `lib/features/product/data/coach_repository.dart` | 可替换的 Agent B 服务边界 |
-| `lib/features/product/data/template_coach_repository.dart` | 明确标记的离线示例模板，不代表 Agent 输出 |
-| `lib/features/product/domain/product_controller.dart` | 状态、完成计数、连续训练与回退策略 |
-| `lib/features/product/presentation/` | 画像、首页、计划、饮食、历史、总结及 D 产品入口 |
-| `lib/features/training_contract/training_gateway.dart` | C 实现的训练模块桥接接口 |
+| `lib/features/product/` | 画像、首页、计划、饮食、历史、总结及 D 产品入口 |
+| `lib/features/training_contract/` | C 实现的训练桥接接口 + Dart 侧原生适配器 |
 | `lib/mocks/mock_training_gateway.dart` | 供 D 并行开发的模拟训练页面 |
-| `lib/main.dart`、`pubspec.yaml` | 独立原型入口与依赖；并入团队工程时由 C 决定如何适配 |
-| `test/product_rules_test.dart` | 对不适阻止自动训练、取消不算完成的规则验证 |
 | `docs/` | 待确认接口、队友交接及 ZCode 指令 |
 
-## 集成原则
-
-先把 `docs/CONTRACT_DRAFT.md` 和三个 JSON 样例发给 C、Agent 组与统筹同学；他们确认后再当正式协议。真实训练由 C 实现 `TrainingGateway`，真实计划和饮食由 Agent B 提供接口并在 D 侧实现 `CoachRepository`。合入已有工程时不要覆盖 C 的路由、`pubspec.yaml`、Android 目录或训练文件。详见 `docs/HANDOFF.md`。
-
-本地 `shared_preferences` 适合原型少量键值数据，不作为必须永久可靠的训练数据库；团队最终的数据保存方案由负责人决定。不要把模型 API Key 放入客户端。
+</details>
