@@ -1,0 +1,11 @@
+我们已经确认你的 APK 在小米手机可运行深蹲/俯卧撑，也查看到它包含 MediaPipe 姿态模型。我们现在要把它与 D 的 Flutter 首页、计划、训练总结和历史做成一个 Android APK。APK 本身无法作为代码模块直接合并，麻烦今天给出可构建的 Android Studio 工程源码压缩包或 Git 仓库（含 Gradle、AndroidManifest、CameraX/MediaPipe 代码、pose_landmarker_lite.task、资源；排除 build 缓存和密钥），以及当前能成功构建的命令。
+
+请同时发六点信息，简短回复即可：
+1. 开始训练的 Activity/Fragment 类名和工程的包名；目前是否可以由外部传入 squat/pushup 预选动作？
+2. 停止训练时，能否导出实际动作 ID、已计次数、完成/取消状态和训练时长？请给一份真实输出或说明还缺哪部分。若尚无结果回传，我们优先做这个，不先做更复杂的视觉效果。
+3. 目前真正实现的纠错项/错误码、计算依据，以及是否真的连了 Agent。没有实现的字段可以为空。
+4. 构建 Gradle/JDK/SDK 版本、依赖及许可证、原项目示例代码来源和我们自己的改动范围。当前包内仍出现 com.google.mediapipe.examples.poselandmarker 命名空间，正式源码和设计文档里要说清来源与原创部分。
+5. 相机权限拒绝、训练取消、按返回键、后台返回、断网时目前的行为；是否需要网络才能识别。
+6. 你是否同意先按 D 的 TrainingLaunchArgs / SessionResult v1 对接：首次只支持一个动作，squat 和 pushup；训练完成返回真实数据，取消不计完成。详细字段见 MOBILE_INTEGRATION_PLAN.md。若你已有数据结构，直接发 JSON 供我们对齐。
+
+建议你负责 Android 原生迁移与桥接，我负责 Flutter Gateway 之后的计划入口、总结/历史与视觉。今天先让深蹲从 D 首页进入你的相机页、结束后回到 D 总结页；俯卧撑第二步接入。请不要只发 APK；源码是比赛提交必需材料，也决定能否做成一个包。

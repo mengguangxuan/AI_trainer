@@ -1,0 +1,1 @@
+给 C 和 Agent 组：我已经做了 D 的 Flutter 独立原型，包括画像、本地保存、首页、今日计划、饮食建议、模拟训练入口、总结和历史。模拟数据在界面明确标记。请先看 docs/CONTRACT_DRAFT.md 与 docs/contracts/ 三份 JSON，今天确认 TrainingLaunchArgs、SessionResult 和画像字段。C 请接 TrainingGateway 并负责团队路由、pubspec、Android 工程和真机 APK；Agent B 请给计划、饮食和训练后更新计划的结构化接口样例；Agent A 与 C 请确定姿态识别责任和错误码表。当前原型尚未在 Flutter/Android 环境编译，不能当作最终安装包。具体并入方式见 docs/HANDOFF.md。

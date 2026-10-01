@@ -8,6 +8,7 @@
 # Flutter and Dart
 .dart_tool/
 .flutter-plugins
+.flutter-plugins*
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
@@ -16,6 +17,10 @@ build/
 coverage/
 
 # Android and Gradle
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/key.properties
 **/.gradle/
 **/local.properties
 **/captures/
@@ -27,6 +32,16 @@ coverage/
 *.dex
 *.class
 
+# Signing and credentials
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+google-services.json
+.env
+.env.*
+!.env.example
+
 # Apple build output and local workspace data
 **/DerivedData/
 **/Pods/
@@ -35,18 +50,7 @@ coverage/
 *.dSYM
 *.dSYM.zip
 
-# Credentials and local configuration
-.env
-.env.*
-!.env.example
-*.jks
-*.keystore
-*.p12
-*.mobileprovision
-google-services.json
-
 # Logs and temporary files
 *.log
 *.tmp
 *.temp
-
