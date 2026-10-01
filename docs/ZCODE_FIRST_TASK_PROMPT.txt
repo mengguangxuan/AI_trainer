@@ -1,0 +1,13 @@
+你是我的 Flutter 开发 Agent。请在我提供的 ai_fitness_d_starter 目录中工作。这是 D 负责的产品原型源码，当前尚无 Android 平台目录；不是团队正式仓库。我没有代码开发经验，请执行命令并给出可核对的结果，不要只讲步骤。
+
+目标：在我的电脑上把原型真正运行在 Android 手机或模拟器，并给出首次验收证据。
+
+第一步只读检查：确认 flutter --version、flutter doctor、当前文件树、Git 状态及 docs/CONTRACT_DRAFT.md。若 SDK 或 Android 设备缺失，报告具体缺失项和你能自动完成的安装/配置步骤，然后继续完成不依赖设备的验证。不要未经询问覆盖现有 lib、test、pubspec.yaml。
+
+第二步在这个独立原型目录补齐 Android 工程：优先使用 flutter create --platforms=android --project-name ai_fitness_d_starter .；检查生成的默认计数器测试，若与本项目无关则删除它。随后执行 flutter pub get、flutter analyze、flutter test。遇到编译、依赖或分析错误就修改本原型源码并重跑，直到成功；保留每个失败的原始关键日志和修复说明。
+
+第三步运行 flutter devices，在可用 Android 设备上执行 flutter run -d <设备ID>。手工或通过可行的自动化核对：首次画像、首页、计划、模拟完成、总结、历史、重启后恢复；模拟取消不计入完成；勾选当前不适后没有开始训练按钮。若无法操纵我的实体手机，明确指出需要我在手机上点击的最少步骤，不要声称已通过真机测试。
+
+第四步输出：1. 实际通过的命令和版本；2. 修改文件清单与原因；3. 手机验证情况和截图/日志路径；4. 仍未通过的 gate；5. 给 C 与 Agent B 的阻断问题。不要接入真实摄像头、WebSocket 或编造 Agent 输出，不要把任何密钥写入源码。
+
+边界：这是 D 独立原型，可以修此目录内的文件；团队正式仓库的 router.dart、pubspec.yaml、training/ 和 android/ 均由 C 接管。接口字段变化先写进 docs/CONTRACT_DRAFT.md 并标为待团队确认。一次只处理这个目标，完成运行验证后停止。

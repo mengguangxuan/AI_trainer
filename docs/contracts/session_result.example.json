@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "session_id": "session_001",
+  "status": "completed",
+  "finished_at": "2026-10-01T15:00:00+08:00",
+  "duration_seconds": 120,
+  "exercises": [
+    {
+      "exercise_id": "squat",
+      "completed_sets": 1,
+      "completed_reps": 6,
+      "quality_trend": null,
+      "main_error_code": "squat.depth_low"
+    }
+  ],
+  "agent_summary": "下次练习时留意下蹲幅度。",
+  "next_plan_changed": true,
+  "source": "real"
+}
