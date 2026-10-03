@@ -4,10 +4,13 @@ C、D 两端共同维护的移动端集成仓库。最终形态以 Flutter 产�
 
 ## 当前状态
 
-- **D 端（本分支 feature/flutter-product-pages）**：Flutter 产品工程已合入，画像/首页/计划/饮食/总结/历史全流程可用，`MockTrainingGateway` 模拟训练闭环已在小米 15 Pro（Android 16）真机验证 9/9 项通过（证据见 `docs/validation-evidence/`）。
-- **C 端（main）**：可独立构建的 Android 实时训练原型（MediaPipe 姿态识别 + 深蹲/俯卧撑计数纠错）位于 `native/android-training/`。
-- **尚未完成**：Flutter MethodChannel 桥接（`NativeTrainingGateway` Dart 侧已就绪）、真实训练闭环、Agent 接口。
-- 桥接协议字段见 `docs/contracts/training_bridge_v1_draft.md` 与 `docs/MOBILE_INTEGRATION_PLAN.md`，最终以双方确认后冻结版本为准。
+- D 端 Flutter 产品工程已合入，画像、首页、计划、饮食、总结和历史流程可用；模拟训练闭环已在小米 15 Pro 真机验证；
+- C 端 Android 原型位于 `native/android-training/`，支持 MediaPipe 姿态识别、深蹲/俯卧撑计数纠错以及完整训练会话生命周期；
+- 原生会话支持暂停、继续、完成和取消，实际训练时长扣除暂停与后台时间；
+- Flutter MethodChannel 与原生训练页已按冻结的 v1 协议接入，App 默认使用真实训练入口；
+- Agent 接口尚未接入，未实现的总结和质量字段保持为空；
+- 已保留 Google MediaPipe 示例的 Apache 2.0 许可证和来源说明；
+- iOS 因当前缺少 macOS/Xcode 硬件条件，不在本阶段范围内。
 
 ## 目录
 
@@ -38,7 +41,7 @@ Flutter 首页
     → Flutter 总结页
 ```
 
-第一轮先打通 `squat`；验收通过后，同一接口开放 `push_up`。
+`squat` 与 `push_up` 共用同一冻结接口；当前 D 的计划入口先使用 `squat`，后续增加俯卧撑产品入口时无需修改桥协议。
 
 ## D 端 Flutter 工程运行
 

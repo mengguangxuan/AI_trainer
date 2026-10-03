@@ -29,7 +29,7 @@ class ExerciseAnalyzer(
     private var smoothedPrimaryAngle: Double? = null
     private var smoothedSecondaryAngle: Double? = null
     private var previousPrimaryAngle: Double? = null
-    private var lastFeedbackCode = FeedbackCode.OK
+    private var activeFeedbackEvent: FeedbackCode? = null
     private var lastFormEventAtMs = Long.MIN_VALUE
     private var sequence = 0L
 
@@ -54,9 +54,17 @@ class ExerciseAnalyzer(
         smoothedPrimaryAngle = null
         smoothedSecondaryAngle = null
         previousPrimaryAngle = null
-        lastFeedbackCode = FeedbackCode.OK
+        activeFeedbackEvent = null
         lastFormEventAtMs = Long.MIN_VALUE
         sequence = 0L
+    }
+
+    /** Cancels an in-flight repetition while preserving completed repetitions and event sequence. */
+    @Synchronized
+    fun cancelCurrentMotionCycle() {
+        resetTrackingCycle()
+        activeFeedbackEvent = null
+        lastFormEventAtMs = Long.MIN_VALUE
     }
 
     @Synchronized
@@ -265,11 +273,9 @@ class ExerciseAnalyzer(
         timestampMs: Long,
         metrics: Map<String, Number>,
     ): TrainingEvent? {
-        val previousFeedback = lastFeedbackCode
-        val changed = feedback != previousFeedback
-        lastFeedbackCode = feedback
-
-        if (feedback == FeedbackCode.OK && previousFeedback != FeedbackCode.OK) {
+        val activeFeedback = activeFeedbackEvent
+        if (feedback == FeedbackCode.OK && activeFeedback != null) {
+            activeFeedbackEvent = null
             return TrainingEvent(
                 sequence = ++sequence,
                 type = "motion.form_event",
@@ -278,16 +284,35 @@ class ExerciseAnalyzer(
                 repIndex = if (repetitions == 0) null else repetitions,
                 phase = stablePhase.wireValue,
                 metrics = metrics,
-                feedbackCode = previousFeedback.wireValue,
-                errorCode = errorCodeFor(previousFeedback),
+                feedbackCode = activeFeedback.wireValue,
+                errorCode = errorCodeFor(activeFeedback),
                 eventAction = "end",
             )
         }
-        if (feedback == FeedbackCode.OK || !changed) return null
+
+        if (feedback == FeedbackCode.OK || feedback == activeFeedback) return null
+
+        if (activeFeedback != null) {
+            activeFeedbackEvent = null
+            return TrainingEvent(
+                sequence = ++sequence,
+                type = "motion.form_event",
+                exercise = exercise.wireValue,
+                timestampMs = timestampMs,
+                repIndex = if (repetitions == 0) null else repetitions,
+                phase = stablePhase.wireValue,
+                metrics = metrics,
+                feedbackCode = activeFeedback.wireValue,
+                errorCode = errorCodeFor(activeFeedback),
+                eventAction = "end",
+            )
+        }
+
         if (lastFormEventAtMs != Long.MIN_VALUE && timestampMs - lastFormEventAtMs < FORM_EVENT_COOLDOWN_MS) {
             return null
         }
         lastFormEventAtMs = timestampMs
+        activeFeedbackEvent = feedback
         return TrainingEvent(
             sequence = ++sequence,
             type = "motion.form_event",

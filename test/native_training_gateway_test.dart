@@ -101,6 +101,7 @@ void main() {
     expect(result, isNotNull);
     expect(result!.isCompleted, isFalse);
     expect(result.status, 'cancelled');
+    expect(result.exercises.single.completedSets, 0);
     expect(result.exercises.single.completedReps, 3);
   });
 
@@ -110,7 +111,9 @@ void main() {
     final BuildContext context = _CaptureContext.last!;
     // 协议 §3：训练开始前中断可返回空列表。
     messenger.setMockMethodCallHandler(
-        channel, (call) async => replyFor(status: 'interrupted', durationSeconds: 0));
+        channel,
+        (call) async =>
+            replyFor(status: 'interrupted', durationSeconds: 0));
     final result =
         await NativeTrainingGateway(channel: channel).start(context, args);
     expect(result, isNotNull);
@@ -133,17 +136,6 @@ void main() {
     );
   });
 
-  testWidgets('unexpected null reply resolves to null without history change',
-      (tester) async {
-    await pumpHost(tester);
-    final BuildContext context = _CaptureContext.last!;
-    // 桥未实现/通道缺失时可能返回 null：D 端不写入历史（ProductShell 直接 return）。
-    messenger.setMockMethodCallHandler(channel, (call) async => null);
-    final result =
-        await NativeTrainingGateway(channel: channel).start(context, args);
-    expect(result, isNull);
-  });
-
   testWidgets('rejects malformed completion before history can save it',
       (tester) async {
     await pumpHost(tester);
@@ -163,8 +155,12 @@ void main() {
     await pumpHost(tester);
     final BuildContext context = _CaptureContext.last!;
     // 未知 status 必须拒绝。
-    messenger.setMockMethodCallHandler(channel,
-        (call) async => replyFor(status: 'finished', exercises: [squatExercise(reps: 6, sets: 1)]));
+    messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => replyFor(
+              status: 'finished',
+              exercises: [squatExercise(reps: 6, sets: 1)],
+            ));
     await expectLater(
       NativeTrainingGateway(channel: channel).start(context, args),
       throwsFormatException,
@@ -191,6 +187,21 @@ void main() {
         (call) async => replyFor(status: 'completed', exercises: [
               squatExercise(reps: 6, sets: -1),
             ]));
+    await expectLater(
+      NativeTrainingGateway(channel: channel).start(context, args),
+      throwsFormatException,
+    );
+  });
+
+  testWidgets('rejects a null response because back must return cancelled',
+      (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(MaterialApp(home: Builder(builder: (value) {
+      context = value;
+      return const SizedBox();
+    })));
+    messenger.setMockMethodCallHandler(channel, (call) async => null);
+
     await expectLater(
       NativeTrainingGateway(channel: channel).start(context, args),
       throwsFormatException,

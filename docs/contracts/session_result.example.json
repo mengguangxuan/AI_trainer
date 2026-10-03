@@ -10,10 +10,10 @@
       "completed_sets": 1,
       "completed_reps": 6,
       "quality_trend": null,
-      "main_error_code": "squat.depth_low"
+      "main_error_code": null
     }
   ],
-  "agent_summary": "下次练习时留意下蹲幅度。",
-  "next_plan_changed": true,
+  "agent_summary": null,
+  "next_plan_changed": false,
   "source": "real"
 }

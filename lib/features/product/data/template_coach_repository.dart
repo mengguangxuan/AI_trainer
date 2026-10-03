@@ -8,8 +8,9 @@ import 'coach_repository.dart';
 class TemplateCoachRepository implements CoachRepository {
   @override
   Future<TrainingPlan> fetchPlan(
-      UserProfileSnapshot profile, List<SessionResult> history) async =>
-      plan(profile, history);
+    UserProfileSnapshot profile,
+    List<SessionResult> history,
+  ) async => plan(profile, history);
 
   @override
   Future<NutritionAdvice> fetchNutrition(UserProfileSnapshot profile) async =>
@@ -39,6 +40,7 @@ class TemplateCoachRepository implements CoachRepository {
           : '根据所选目标“${profile.goal}”和运动基础，先展示一项无需器械的练习。',
       item: TrainingPlanItem(
         id: 'template_squat_01',
+        exerciseId: 'squat',
         title: '徒手深蹲',
         targetSets: 1,
         targetReps: reps,

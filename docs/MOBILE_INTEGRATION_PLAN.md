@@ -14,7 +14,7 @@
 
 APK 是已经编译好的安装包，不是可复制进 Flutter 的源码模块。不要把两份 APK 合并压缩、反编译重构，或把要求用户安装两个应用的跳转当成最终的一体化交付。需要 C 的可构建源工程、模型文件、资源、Gradle 依赖和明确的输入/输出接口。
 
-我已在 D 原型额外准备 `lib/features/training_contract/native_training_gateway.dart`（Dart 侧 `MethodChannel('ai_fitness/training_v1')`，方法 `startTraining`）和对应的桥接边界测试 `test/native_training_gateway_test.dart`。它们只定义调用和返回校验，**没有替换 `main.dart` 的 `MockTrainingGateway`，也没有实现 C 的 Android 原生一侧**。C 提供源码并完成原生桥后，先在真机验证，再将 D 的入口切换为真实实现。
+Flutter 与 Android 已通过 `MethodChannel('ai_fitness/training_v1')` 的 `startTraining` 接通；`main.dart` 默认使用 `NativeTrainingGateway`。原生模块通过 `android/trainingbridge` 引用 `native/android-training` 的同一份源码和模型，避免复制两套算法实现。`MockTrainingGateway` 仅保留给独立界面测试和演示回退，不再是产品默认入口。
 
 ## 先冻结的最小接口（沿用 D 工程 v1）
 
@@ -30,7 +30,7 @@ APK 是已经编译好的安装包，不是可复制进 Flutter 的源码模块�
 }
 ```
 
-`exercise_id` 首批只约定 `squat` 和 `pushup`。计划模式按传入动作预选；C 若继续保留手动选择，应将它用于自由训练，或者把用户最终选择的动作写入返回结果。D 当前模板仅有 `squat`，俯卧撑入口须在真实桥接跑通后增加，不能单靠 C 原型可选就宣称 D 支持俯卧撑。
+`exercise_id` 首批只约定 `squat` 和 `push_up`。每次调用锁定一个动作，不允许在训练页切换。D 当前模板仅有 `squat`，俯卧撑入口须在真实桥接跑通后增加，不能单靠 C 原型可选就宣称 D 支持俯卧撑。
 
 ### C → D：离开训练页必须给出确定结果
 
@@ -79,7 +79,7 @@ APK 是已经编译好的安装包，不是可复制进 Flutter 的源码模块�
 ## 单包验收清单
 
 - [ ] 仅安装一个 APK；首页、画像、计划、摄像头训练、总结和历史都在同一包内。
-- [ ] `squat` 与 `pushup` 各跑一次，动作选择、计数和最终结果一致；以实测能力展示，不能承诺未实现的自动识别动作种类。
+- [ ] `squat` 与 `push_up` 各跑一次，动作选择、计数和最终结果一致；以实测能力展示，不能承诺未实现的自动识别动作种类。
 - [ ] 开始→返回/取消→重新进入；拒绝相机权限→可恢复；训练中关网→明确状态；切到后台→返回，不崩溃或误计完成。
 - [ ] 真训练 `source=real`，模拟/模板有可见标注；完成才计入历史统计；应用重启后结果仍在。
 - [ ] 最终 APK 在小米真机安装；`flutter analyze` / `flutter test` 和 Android 构建通过。发布包与调试包差异由 C 管理。

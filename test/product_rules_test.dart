@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_fitness_d_starter/core/models/session_result.dart';
+import 'package:ai_fitness_d_starter/core/models/training_plan.dart';
 import 'package:ai_fitness_d_starter/core/models/user_profile_snapshot.dart';
 import 'package:ai_fitness_d_starter/features/product/data/template_coach_repository.dart';
 
@@ -48,5 +49,26 @@ void main() {
     });
     expect(result.isCompleted, isFalse);
     expect(result.exercises, isEmpty);
+  });
+
+  test('template plan launches the explicit squat exercise id', () {
+    final item = TemplateCoachRepository().plan(profile, []).item!;
+    expect(item.exerciseId, 'squat');
+    expect(item.launchArgs().exercises.single.exerciseId, 'squat');
+  });
+
+  test('agent-ready plan item preserves a push-up exercise id', () {
+    const item = TrainingPlanItem(
+      id: 'agent_push_up_01',
+      exerciseId: 'push_up',
+      title: '俯卧撑',
+      targetSets: 1,
+      targetReps: 6,
+      restSeconds: 45,
+    );
+
+    final args = item.launchArgs();
+    expect(args.planItemId, 'agent_push_up_01');
+    expect(args.exercises.single.exerciseId, 'push_up');
   });
 }

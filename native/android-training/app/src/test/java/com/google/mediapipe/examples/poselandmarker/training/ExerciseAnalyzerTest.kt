@@ -105,6 +105,21 @@ class ExerciseAnalyzerTest {
         assertEquals(FeedbackCode.MOVE_INTO_FRAME, result.feedbackCode)
     }
 
+    @Test
+    fun suppressedErrorStartDoesNotProduceOrphanEndEvents() {
+        val analyzer = ExerciseAnalyzer()
+
+        val firstStart = analyzer.process(emptyList(), 0L).event
+        val firstEnd = analyzer.process(squatPose(170.0), 100L).event
+        val suppressedStart = analyzer.process(emptyList(), 200L).event
+        val orphanEnd = analyzer.process(squatPose(170.0), 300L).event
+
+        assertEquals("start", firstStart?.eventAction)
+        assertEquals("end", firstEnd?.eventAction)
+        assertEquals(null, suppressedStart)
+        assertEquals(null, orphanEnd)
+    }
+
     private fun squatPose(kneeAngle: Double): List<Landmark2D> {
         val points = blankPose()
         setJointAngle(points, 23, 25, 27, kneeAngle, 0.42f)
