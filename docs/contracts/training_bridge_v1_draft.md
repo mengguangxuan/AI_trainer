@@ -1,6 +1,17 @@
-# Training Bridge v1（临时草案）
+# Training Bridge v1 草案（已归档）
 
-> 状态：等待 D 端 `MOBILE_INTEGRATION_PLAN.md` 入库后逐项核对并冻结。
+> **本文件已归档，不再是当前协议。**
+>
+> v1 协议已于 2026-10-01 由 C、D 双方确认并冻结，当前版本见：
+>
+> **[training_bridge_v1_frozen.md](./training_bridge_v1_frozen.md)**
+>
+> 通道名以冻结版为准：`ai_fitness/training_v1`（本草案早期写的 `ai_fitness_coach/training` 已废弃）。
+> 任何 Kotlin、Dart 或测试的桥接改动都应依据冻结版文件，不要依据本草案。
+
+---
+
+以下为归档原文（仅作历史参考）：
 
 原生预留实现：
 
@@ -9,7 +20,7 @@ native/android-training/app/src/main/java/com/google/mediapipe/examples/
 poselandmarker/training/bridge/TrainingBridgeContract.kt
 ```
 
-当前预留的 MethodChannel：
+早期草案预留的 MethodChannel：
 
 ```text
 channel：ai_fitness_coach/training
@@ -18,7 +29,7 @@ method：startTraining
 
 数据类不依赖 Flutter SDK，只使用 StandardMessageCodec 可传输的 `Map<String, Any>` 类型。D 端工程到位后再增加实际 MethodChannel handler。
 
-## 启动参数
+## 启动参数（早期草案）
 
 ```json
 {
@@ -36,7 +47,7 @@ method：startTraining
 - `session_id` 由产品/会话层生成，原生训练模块只使用和回传；
 - `target_reps` 必须为正整数。
 
-## 返回结果
+## 返回结果（早期草案）
 
 ```json
 {

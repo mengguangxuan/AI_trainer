@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "plan_item_id": "template_squat_01",
+  "training_mode": "planned",
+  "exercises": [
+    {
+      "exercise_id": "squat",
+      "target_sets": 1,
+      "target_reps": 6,
+      "rest_seconds": 45
+    }
+  ],
+  "coach_name": "AI 私教"
+}

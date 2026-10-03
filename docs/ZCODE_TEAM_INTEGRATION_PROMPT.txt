@@ -1,0 +1,7 @@
+你现在在五人团队的 Flutter 正式仓库中。先只读检查仓库结构、当前分支、未提交修改及本包 docs/HANDOFF.md、docs/CONTRACT_DRAFT.md。不要直接复制覆盖团队文件。
+
+目标：将 D 的 ai_fitness_d_starter 原型合入团队 App。先列出团队已存在的同名对象和冲突，再给出逐文件并入方案，确保 C 对 router.dart、pubspec.yaml、android/、training/ 的唯一所有权。D 的 features/product/ 与 core/theme/ 由 D 修改。models 与 training_contract 先由 C、D、统筹同学确认后冻结。
+
+先用 MockTrainingGateway 跑通画像→计划→模拟训练→总结→历史，并在 Android 真机运行。接着请 C 实现 TrainingGateway 接入真实训练模块；请 Agent B 提供真实 JSON 后再实现 CoachRepository 的 HTTP 版本。没有接口的地方保留有来源标签的模板，不写死 API Key，不伪造测量分数。每个阶段运行 flutter analyze、flutter test 和真机关键路径；报告文件 diff、命令结果、接口待确认项和实际可演示范围。
+
+不要同时让另一个 Agent 修改这个仓库。若必须改共享文件，先给出具体 diff，由该文件负责人执行或明确同意后再修改。
