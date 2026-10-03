@@ -99,12 +99,7 @@ method: startTraining
 - 使用单调时钟计算训练时长，扣除主动暂停和进入后台的时间；
 - 完成、取消或中断后向 Flutter 返回结构化结果。
 
-需要区分两层能力：
-
-- 原生算法和桥协议支持 `squat`、`push_up`；
-- 当前 Flutter 产品计划的 `TrainingPlanItem.launchArgs()` 将动作固定为 `squat`，因此用户界面当前只有深蹲入口。
-
-如果 Agent 需要下发俯卧撑计划，App 需要先给 `TrainingPlanItem` 增加 `exercise_id` 并限制为 `squat/push_up`，再把该字段传入 `TrainingLaunchArgs`。在此改动完成前，Agent 不应假设下发 `push_up` 后 App 会执行俯卧撑。
+原生算法、桥协议和 Flutter `TrainingPlanItem` 均已支持显式传递 `squat/push_up`。当前本地模板只生成深蹲，所以现有用户界面仍只有深蹲入口；真实 Agent 接入后可以通过计划项的 `exercise_id` 选择深蹲或俯卧撑。
 
 ### 2.4 训练结果、总结和历史
 
@@ -188,6 +183,7 @@ abstract class CoachRepository {
   "reason": "根据用户画像和最近训练记录生成的简短原因",
   "item": {
     "id": "agent_plan_item_001",
+    "exercise_id": "squat",
     "title": "徒手深蹲",
     "target_sets": 1,
     "target_reps": 6,
@@ -265,7 +261,7 @@ abstract class CoachRepository {
 
 1. Agent 先提供固定 JSON 的计划和饮食接口；
 2. App 实现网络版 `CoachRepository`，完成超时和本地模板降级；
-3. 双方给 `TrainingPlanItem` 增加并冻结 `exercise_id`，先支持 `squat/push_up`；
+3. 双方确认计划响应沿用 App 已预留的 `exercise_id`，首批只支持 `squat/push_up`；
 4. 真机走通“画像 → Agent 计划 → 真实训练 → 本地总结和历史”；
 5. 增加训练后总结接口，以 `session_id` 做幂等；
 6. 确认 Agent 真实保存新计划后，再在 App 中展示 `next_plan_changed=true`；
