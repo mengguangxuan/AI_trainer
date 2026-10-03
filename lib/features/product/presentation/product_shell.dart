@@ -39,7 +39,9 @@ class _ProductShellState extends State<ProductShell> {
     try {
       final SessionResult? result =
           await widget.training.start(context, item.launchArgs());
-      if (result == null) return; // e.g. system back without an outcome
+      // training_bridge_v1_frozen.md §4：正常退出都返回明确状态；
+      // null 仅在桥未实现/通道异常时出现，此时不更新任何历史。
+      if (result == null) return;
       var saved = true;
       try {
         await widget.controller.recordSession(result);
@@ -53,7 +55,11 @@ class _ProductShellState extends State<ProductShell> {
         ));
       }
       await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => SessionSummaryPage(result: result, saved: saved),
+        builder: (_) => SessionSummaryPage(
+          result: result,
+          saved: saved,
+          targetReps: item.targetReps,
+        ),
       ));
     } catch (_) {
       if (mounted) {
