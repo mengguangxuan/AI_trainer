@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/coach_session_summary.dart';
 import '../../../core/models/session_result.dart';
 import '../../../core/theme/app_theme.dart';
+import '../domain/product_controller.dart';
 
 class SessionSummaryPage extends StatelessWidget {
   const SessionSummaryPage({
@@ -9,6 +11,8 @@ class SessionSummaryPage extends StatelessWidget {
     required this.result,
     this.saved = true,
     this.targetReps,
+    this.agentSummary,
+    this.controller,
   });
 
   final SessionResult result;
@@ -17,6 +21,8 @@ class SessionSummaryPage extends StatelessWidget {
   /// 本组目标次数（由计划入口传入）。仅用于展示"是否达到目标"，
   /// 不改变完成状态的判定——判定以桥返回的 status 为准。
   final int? targetReps;
+  final CoachSessionSummary? agentSummary;
+  final ProductController? controller;
 
   /// 错误码文案与 docs/contracts/training_bridge_v1_frozen.md 保持一致；
   /// 未知码只显示代码本身，不推断健康结论。
@@ -31,7 +37,16 @@ class SessionSummaryPage extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => controller == null
+      ? _build(context)
+      : AnimatedBuilder(
+          animation: controller!,
+          builder: (context, _) => _build(context),
+        );
+
+  Widget _build(BuildContext context) {
+    final agentSummary =
+        controller?.summaries[result.sessionId] ?? this.agentSummary;
     final scheme = Theme.of(context).colorScheme;
     final completed = result.isCompleted;
     final exercise = result.exercises.firstOrNull;
@@ -200,7 +215,7 @@ class SessionSummaryPage extends StatelessWidget {
             ),
 
             // —— Agent 反馈（如有） ——
-            if (result.agentSummary != null) ...[
+            if (agentSummary != null || result.agentSummary != null) ...[
               const SizedBox(height: AppSpacing.gap),
               Card(
                 child: Padding(
@@ -210,7 +225,18 @@ class SessionSummaryPage extends StatelessWidget {
                     children: [
                       Text('教练反馈', style: AppText.cardTitle),
                       const SizedBox(height: AppSpacing.gapSmall),
-                      Text(result.agentSummary!, style: AppText.body),
+                      Text(
+                        agentSummary?.agentSummary ?? result.agentSummary!,
+                        style: AppText.body,
+                      ),
+                      if (agentSummary != null &&
+                          agentSummary.limitations.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.gapSmall),
+                        Text(
+                          '说明：${agentSummary.limitations.join(' ')}',
+                          style: AppText.caption,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -218,6 +244,35 @@ class SessionSummaryPage extends StatelessWidget {
             ],
 
             const SizedBox(height: AppSpacing.gap),
+            if (result.source == 'real' &&
+                controller != null &&
+                agentSummary == null) ...[
+              if (controller!.summarizing.contains(result.sessionId))
+                const ListTile(
+                  leading: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  title: Text('教练正在生成总结'),
+                )
+              else ...[
+                Text(
+                  controller!.summaryErrors[result.sessionId] ??
+                      (controller!.connection.allowDataUpload
+                          ? '原始训练已保存。'
+                          : '本地模式：未发送训练数据。'),
+                  style: AppText.caption,
+                ),
+                if (controller!.connection.allowDataUpload)
+                  TextButton.icon(
+                    onPressed: () => controller!.retrySummary(result),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('重试教练总结'),
+                  ),
+              ],
+              const SizedBox(height: AppSpacing.gap),
+            ],
             Text(
               result.nextPlanChanged && completed
                   ? '下一次安排将参考这次已完成的训练。'

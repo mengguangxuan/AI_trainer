@@ -8,12 +8,14 @@ class HomePage extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onStart,
+    required this.onStartFree,
     required this.onEditProfile,
     required this.busy,
   });
 
   final ProductController controller;
   final Future<void> Function() onStart;
+  final Future<void> Function() onStartFree;
   final VoidCallback onEditProfile;
   final bool busy;
 
@@ -22,8 +24,16 @@ class HomePage extends StatelessWidget {
     final profile = controller.profile!;
     final plan = controller.plan!;
     final nutrition = controller.nutrition!;
-    final planSource = plan.source == 'agent' ? 'Agent' : '本地模板';
-    final nutritionSource = nutrition.source == 'agent' ? 'Agent' : '本地模板';
+    final planSource = plan.source == 'agent'
+        ? 'Agent'
+        : controller.planUsingFallback
+        ? '本地模板'
+        : '服务规则';
+    final nutritionSource = nutrition.source == 'agent'
+        ? 'Agent'
+        : controller.nutritionUsingFallback
+        ? '本地模板'
+        : '服务规则';
     return ListView(
       padding: AppSpacing.pagePadding,
       children: [
@@ -60,29 +70,42 @@ class HomePage extends StatelessWidget {
             onStart: onStart,
           ),
 
-        // 暂停状态（有当前不适）：独立的醒目提示卡
+        // 没有计划项时，区分身体不适与普通休息安排。
         if (plan.item == null)
           Card(
             child: Padding(
               padding: AppSpacing.cardPadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon(
+                children: [
+                  const Icon(
                     Icons.pause_circle_outline,
                     size: 32,
                     color: AppTheme.neutral,
                   ),
-                  SizedBox(height: AppSpacing.gapSmall),
-                  Text('先处理当前不适', style: AppText.cardTitle),
-                  SizedBox(height: 4),
-                  Text('你标记了当前身体不适，暂不自动安排训练。可修改档案或查看记录。', style: AppText.body),
+                  const SizedBox(height: AppSpacing.gapSmall),
+                  Text(
+                    profile.hasCurrentDiscomfort ? '先处理当前不适' : plan.headline,
+                    style: AppText.cardTitle,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    profile.hasCurrentDiscomfort
+                        ? '你标记了当前身体不适，暂不提供训练入口。可修改档案或查看记录。'
+                        : plan.reason,
+                    style: AppText.body,
+                  ),
                 ],
               ),
             ),
           ),
 
         const SizedBox(height: AppSpacing.gap),
+
+        if (!profile.hasCurrentDiscomfort) ...[
+          _FreeTrainingCard(busy: busy, onStart: onStartFree),
+          const SizedBox(height: AppSpacing.gap),
+        ],
 
         // —— 次要：统计行（紧凑单行卡） ——
         Card(
@@ -105,7 +128,11 @@ class HomePage extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  controller.usingFallback ? '本地回退' : '计划：$planSource',
+                  !controller.connection.allowDataUpload
+                      ? '本地模式'
+                      : controller.usingFallback
+                      ? '本地回退'
+                      : '计划：$planSource',
                   style: AppText.caption,
                 ),
               ],
@@ -136,11 +163,20 @@ class HomePage extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.gapSmall),
         Text(
-          controller.usingFallback
+          !controller.connection.allowDataUpload
+              ? '本地模式 · 未发送训练数据'
+              : controller.usingFallback
               ? '服务不可用：当前显示本地示例模板；训练来源见总结页。'
               : '计划来源：$planSource；饮食来源：$nutritionSource；训练来源见总结页。',
           style: AppText.caption,
         ),
+        if (controller.coachError != null) ...[
+          const SizedBox(height: AppSpacing.gapSmall),
+          Text(
+            'Agent 状态：${controller.coachError}',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF9A6B1F)),
+          ),
+        ],
       ],
     );
   }
@@ -164,6 +200,41 @@ class HomePage extends StatelessWidget {
       ],
     );
   }
+}
+
+class _FreeTrainingCard extends StatelessWidget {
+  const _FreeTrainingCard({required this.busy, required this.onStart});
+
+  final bool busy;
+  final Future<void> Function() onStart;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: AppSpacing.cardPadding,
+      child: Row(
+        children: [
+          const Icon(Icons.directions_run, color: AppTheme.primary),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('自由训练', style: AppText.cardTitle),
+                SizedBox(height: 2),
+                Text('不受今日计划限制，自选深蹲或俯卧撑。', style: AppText.caption),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            onPressed: busy ? null : onStart,
+            child: Text(busy ? '请稍候' : '选择动作'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// 今日训练主卡：动作、组×次、休息直接展示，开始按钮嵌在卡内。

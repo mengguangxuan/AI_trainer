@@ -88,6 +88,10 @@ open class TrainingActivity : AppCompatActivity() {
         sessionController.updateRepetitionsIfActive(snapshot.repetitions)
     }
 
+    fun publishTrainingEvent(eventJson: String) {
+        trainingEventListener?.invoke(eventJson)
+    }
+
     fun togglePause(): TrainingSessionSnapshot {
         when (sessionController.state) {
             TrainingSessionState.ACTIVE -> sessionController.pause()
@@ -274,6 +278,10 @@ open class TrainingActivity : AppCompatActivity() {
             value.hasExtra(EXTRA_SCHEMA_VERSION)
 
     companion object {
+        /** Process-local bridge for structured events; raw frames never cross it. */
+        @Volatile
+        var trainingEventListener: ((String) -> Unit)? = null
+
         const val EXTRA_SCHEMA_VERSION = "schema_version"
         const val EXTRA_SESSION_ID = "session_id"
         const val EXTRA_PLAN_ITEM_ID = "plan_item_id"

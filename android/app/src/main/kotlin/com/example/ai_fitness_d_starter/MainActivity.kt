@@ -6,12 +6,14 @@ import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingBrid
 import com.google.mediapipe.examples.poselandmarker.training.bridge.TrainingLaunchArgs
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
 import org.json.JSONObject
 
 class MainActivity : FlutterActivity() {
     private var pendingTrainingResult: MethodChannel.Result? = null
+    private var trainingEventSink: EventChannel.EventSink? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -25,6 +27,28 @@ class MainActivity : FlutterActivity() {
             }
             startNativeTraining(call.arguments, result)
         }
+        EventChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            TRAINING_EVENTS_CHANNEL,
+        ).setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                trainingEventSink = events
+                TrainingActivity.trainingEventListener = { eventJson ->
+                    runOnUiThread { trainingEventSink?.success(eventJson) }
+                }
+            }
+
+            override fun onCancel(arguments: Any?) {
+                trainingEventSink = null
+                TrainingActivity.trainingEventListener = null
+            }
+        })
+    }
+
+    override fun onDestroy() {
+        TrainingActivity.trainingEventListener = null
+        trainingEventSink = null
+        super.onDestroy()
     }
 
     @Suppress("DEPRECATION")
@@ -119,5 +143,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val REQUEST_NATIVE_TRAINING = 4101
+        private const val TRAINING_EVENTS_CHANNEL =
+            "ai_fitness/training_events_v0_1"
     }
 }

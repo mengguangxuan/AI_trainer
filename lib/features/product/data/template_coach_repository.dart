@@ -5,7 +5,7 @@ import '../../../core/models/user_profile_snapshot.dart';
 import 'coach_repository.dart';
 
 /// Deliberately labelled template output. Replace with Agent B's repository.
-class TemplateCoachRepository implements CoachRepository {
+class TemplateCoachRepository extends CoachRepository {
   @override
   Future<TrainingPlan> fetchPlan(
     UserProfileSnapshot profile,

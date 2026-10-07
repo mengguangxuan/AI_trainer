@@ -491,7 +491,9 @@ class CameraFragment : Fragment(), PoseLandmarkerHelper.LandmarkerListener {
             null
         }
         trainingSnapshot?.event?.let { event ->
-            Log.i(EVENT_TAG, event.toJson(host.launchArgs.sessionId))
+            val eventJson = event.toJson(host.launchArgs.sessionId)
+            Log.i(EVENT_TAG, eventJson)
+            host.publishTrainingEvent(eventJson)
         }
 
         activity?.runOnUiThread {

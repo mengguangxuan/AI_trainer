@@ -8,9 +8,24 @@ C、D 两端共同维护的移动端集成仓库。最终形态以 Flutter 产�
 - C 端 Android 原型位于 `native/android-training/`，支持 MediaPipe 姿态识别、深蹲/俯卧撑计数纠错以及完整训练会话生命周期；
 - 原生会话支持暂停、继续、完成和取消，实际训练时长扣除暂停与后台时间；
 - Flutter MethodChannel 与原生训练页已按冻结的 v1 协议接入，App 默认使用真实训练入口；
-- Agent 接口尚未接入，未实现的总结和质量字段保持为空；
+- Agent HTTP App Coach v1 已接入：计划、饮食和训练后总结分别请求，服务不可用时各自回退到本地模板；原生训练字段仍保持 v1 冻结语义；
+- APP 已增加“教练”入口，支持 Agent 聊天、画像同步、聊天记忆查看与删除；消息可携带当前计划和最近真实训练事实；
 - 已保留 Google MediaPipe 示例的 Apache 2.0 许可证和来源说明；
 - iOS 因当前缺少 macOS/Xcode 硬件条件，不在本阶段范围内。
+
+## 本次解决的问题
+
+本分支重点解决 APP 与 Agent 在数据字段、隐私边界和失败处理上的分歧：
+
+- 统一使用 HTTP App Coach v1。计划、饮食、本周回顾和训练后总结使用同一套字段、时间格式、错误码和开发鉴权；APP 不再上传完整用户画像中的本地不适字段。
+- 训练结果先由 APP 本地保存，Agent 总结作为独立附加记录按 `installation_id + session_id` 幂等保存。Agent 不可用不会丢失原始训练，也不会把模板结果伪装成模型结果。
+- 新增 `App Privacy Flow v1`。Video LLM、骨骼/URDF 适配器和复杂状态聚合器只提交语义 token、归一化统计和轨迹 token；摄像头视频、图片、像素、逐帧关键点和原始 URDF 不进入云端请求。
+- APP 通过 `AgentCoachRepository.submitPrivacyFlow` 调用 `/api/app/v1/privacy/flow`，返回 token-only 回执、受限分析和透明红色本地轨迹叠加参数。观测受限时不会被显示为动作正确。
+- 默认本地模式，用户必须在“Agent 连接”页面明确授权训练数据传输；正式服务要求 HTTPS，远程调试要求开发凭据。
+
+协议文档：[APP Privacy Flow v1](docs/contracts/app_privacy_flow_v1.md)、[Agent 联调说明](docs/AGENT_INTEGRATION.md)。当前 `edge_catalog_v1` 只是可运行参考 token 适配器；TeleAI/智传网正式 SDK 接入时只能替换适配器，不能放开原始媒体字段限制。
+
+最近验证：`flutter analyze` 无问题，Flutter 测试 `45 passed`（2 个 live case 默认跳过），计划/聊天/记忆真实客户端与本地 Agent live contract 已通过，Android Debug APK 构建成功。
 
 ## 目录
 
@@ -48,10 +63,16 @@ Flutter 首页
 ```powershell
 flutter pub get
 flutter analyze        # 当前：No issues found
-flutter test           # 当前：5/5 通过
+flutter test           # 当前：45 passed，2 个 live case 默认跳过
 flutter devices
 flutter run -d <设备ID>
 ```
+
+Agent 联调默认请求 `http://127.0.0.1:8000/api/app/v1/`。模拟器或 USB 真机先执行 `adb reverse tcp:8000 tcp:8000`；也可使用 `--dart-define=AGENT_BASE_URL=...` 覆盖地址。完整边界见 `docs/AGENT_INTEGRATION.md`。
+
+首页右上角“Agent 连接”可以设置地址、检测兼容性、授权训练数据传输和清除总结。默认本地模式，不静默上传。训练结束先保存原始记录，再后台生成总结；失败可重试，记录页支持本周回顾。服务端 `coach/config.json` 未填写模型密钥时明确使用模板，不伪报模型生成。
+
+本机已配置 Flutter/Android SDK：运行 `. .\scripts\env.ps1` 加载工具，`scripts/build_debug.ps1` 自动检查、测试并构建 APK。中文工程路径使用英文构建副本，原目录保持不变。
 
 依赖：Flutter 3.47.5 / Dart 3.13.4（要求 Dart ≥3.9）。**注意：工程需与 Flutter 插件缓存（PUB_CACHE）位于同一磁盘分区**，否则 Kotlin 增量编译跨盘符会失败（Kotlin "different roots" 错误）；国内网络下 Gradle wrapper 已配置腾讯镜像。
 
