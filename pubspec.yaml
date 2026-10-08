@@ -1,7 +1,7 @@
 name: ai_fitness_d_starter
 description: D 模块可运行原型，等待并入团队 Flutter 工程
 publish_to: none
-version: 0.1.0+1
+version: 0.1.0+2
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
