@@ -4,6 +4,7 @@ import '../../../core/models/coach_session_summary.dart';
 import '../../../core/models/session_result.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/product_controller.dart';
+import 'product_ui.dart';
 
 class SessionSummaryPage extends StatelessWidget {
   const SessionSummaryPage({
@@ -47,7 +48,6 @@ class SessionSummaryPage extends StatelessWidget {
   Widget _build(BuildContext context) {
     final agentSummary =
         controller?.summaries[result.sessionId] ?? this.agentSummary;
-    final scheme = Theme.of(context).colorScheme;
     final completed = result.isCompleted;
     final exercise = result.exercises.firstOrNull;
     final reps = exercise?.completedReps ?? 0;
@@ -61,96 +61,97 @@ class SessionSummaryPage extends StatelessWidget {
         child: ListView(
           padding: AppSpacing.pagePadding,
           children: [
-            // —— 头部主视觉：状态 + 实际次数（大数字）+ 目标进度 ——
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: completed
-                      ? scheme.primary.withValues(alpha: 0.5)
-                      : const Color(0xFFE0E4E1),
-                  width: completed ? 1.5 : 1,
-                ),
+            ProductHero(
+              eyebrow: 'SESSION RESULT · 训练结果',
+              title: !saved
+                  ? '训练结束，记录未保存'
+                  : completed
+                  ? '本次训练已完成'
+                  : '本次训练未完成',
+              subtitle: completed
+                  ? '保持自己的节奏，每一次完成都会沉淀为训练记录。'
+                  : '本次只展示实际进度，不将中止或取消误判为完成。',
+              icon: completed ? Icons.check_rounded : Icons.pause_rounded,
+              gradient: completed
+                  ? AppTheme.heroGradient
+                  : const LinearGradient(
+                      colors: [Color(0xFF525B57), Color(0xFF747D79)],
+                    ),
+              footer: Row(
+                children: [
+                  Expanded(
+                    child: ProductMetric(
+                      value: '$reps',
+                      label: '完成次数',
+                      color: Colors.white,
+                      background: const Color(0x1FFFFFFF),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ProductMetric(
+                      value: '${exercise?.completedSets ?? 0}',
+                      label: '完成组数',
+                      color: Colors.white,
+                      background: const Color(0x1FFFFFFF),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ProductMetric(
+                      value: '${result.durationSeconds}',
+                      label: '训练秒数',
+                      color: Colors.white,
+                      background: const Color(0x1FFFFFFF),
+                    ),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: AppSpacing.cardPadding,
+            ),
+
+            if (targetReps != null) ...[
+              const SizedBox(height: AppSpacing.gapSmall),
+              Container(
+                padding: const EdgeInsets.all(14),
+                color: Colors.white,
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          completed ? Icons.check_circle : Icons.pause_circle,
-                          size: 22,
-                          color: completed ? scheme.primary : AppTheme.neutral,
+                        Text(
+                          '本组目标',
+                          style: AppText.cardTitle.copyWith(fontSize: 14),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            !saved
-                                ? '训练已结束，但记录未保存'
-                                : completed
-                                ? '本次训练已完成'
-                                : '本次训练未完成',
-                            style: AppText.cardTitle,
-                          ),
-                        ),
+                        const Spacer(),
+                        Text('$reps / $targetReps 次', style: AppText.caption),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.gap),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$reps',
+                    const SizedBox(height: 10),
+                    _Progress(
+                      reps: reps,
+                      target: targetReps!,
+                      active: completed ? AppTheme.energy : AppTheme.neutral,
+                    ),
+                    if (completed) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          reachedTarget ? '已达到本组目标' : '提前结束：未达到目标',
                           style: TextStyle(
-                            fontSize: 52,
-                            fontWeight: FontWeight.w800,
-                            height: 1.0,
-                            color: completed
-                                ? scheme.primary
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: reachedTarget
+                                ? AppTheme.primary
                                 : AppTheme.neutral,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text('次', style: AppText.body),
-                        ),
-                        const Spacer(),
-                        if (targetReps != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(
-                              '目标 $targetReps 次',
-                              style: AppText.caption,
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (targetReps != null) ...[
-                      const SizedBox(height: AppSpacing.gapSmall),
-                      _Progress(
-                        reps: reps,
-                        target: targetReps!,
-                        active: completed ? scheme.primary : AppTheme.neutral,
                       ),
-                      const SizedBox(height: AppSpacing.gapSmall),
                     ],
-                    if (completed && targetReps != null)
-                      Text(
-                        reachedTarget ? '已达到本组目标' : '提前结束：未达到目标',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: reachedTarget
-                              ? scheme.primary
-                              : AppTheme.neutral,
-                        ),
-                      ),
                   ],
                 ),
               ),
-            ),
+            ],
 
             // —— 模拟来源标注：紧跟结果卡，颜色区分，不可误读 ——
             if (result.source == 'mock')
@@ -163,7 +164,6 @@ class SessionSummaryPage extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.mockBadge.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: AppTheme.mockBadge.withValues(alpha: 0.4),
                     ),
@@ -199,6 +199,8 @@ class SessionSummaryPage extends StatelessWidget {
             const SizedBox(height: AppSpacing.gap),
 
             // —— 次要数据行：时长 / 组数 / 纠错 ——
+            const ProductSectionTitle(title: '训练数据', eyebrow: 'DETAILS'),
+            const SizedBox(height: 10),
             Card(
               child: Padding(
                 padding: AppSpacing.cardPadding,
@@ -216,15 +218,15 @@ class SessionSummaryPage extends StatelessWidget {
 
             // —— Agent 反馈（如有） ——
             if (agentSummary != null || result.agentSummary != null) ...[
-              const SizedBox(height: AppSpacing.gap),
+              const SizedBox(height: 20),
+              const ProductSectionTitle(title: '教练反馈', eyebrow: 'AI REVIEW'),
+              const SizedBox(height: 10),
               Card(
                 child: Padding(
                   padding: AppSpacing.cardPadding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('教练反馈', style: AppText.cardTitle),
-                      const SizedBox(height: AppSpacing.gapSmall),
                       Text(
                         agentSummary?.agentSummary ?? result.agentSummary!,
                         style: AppText.body,
@@ -273,11 +275,12 @@ class SessionSummaryPage extends StatelessWidget {
               ],
               const SizedBox(height: AppSpacing.gap),
             ],
-            Text(
-              result.nextPlanChanged && completed
+            ProductNotice(
+              icon: Icons.calendar_month_outlined,
+              title: '下一次安排',
+              body: result.nextPlanChanged && completed
                   ? '下一次安排将参考这次已完成的训练。'
                   : '本次没有确认的下一次计划调整。',
-              style: AppText.caption,
             ),
             const SizedBox(height: AppSpacing.gap),
             SizedBox(
@@ -318,7 +321,7 @@ class _Progress extends StatelessWidget {
   Widget build(BuildContext context) {
     final ratio = target <= 0 ? 0.0 : (reps / target).clamp(0.0, 1.0);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.zero,
       child: LinearProgressIndicator(
         value: ratio,
         minHeight: 6,

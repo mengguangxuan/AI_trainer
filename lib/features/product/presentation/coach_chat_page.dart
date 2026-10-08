@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/coach_memory.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/product_controller.dart';
+import 'product_ui.dart';
 
 class CoachChatPage extends StatefulWidget {
   const CoachChatPage({super.key, required this.controller});
@@ -59,20 +60,76 @@ class _CoachChatPageState extends State<CoachChatPage> {
     if (!controller.connection.allowDataUpload) {
       return ListView(
         padding: AppSpacing.pagePadding,
-        children: const [
-          Card(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(gradient: AppTheme.coachGradient),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CoachAvatar(size: 54, locked: true),
+                SizedBox(height: 24),
+                Text(
+                  '聊天与记忆尚未启用',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '请先在右上角 Agent 连接中确认服务地址，并允许 Agent 使用训练数据。',
+                  style: TextStyle(
+                    color: Color(0xFFE5E5FF),
+                    height: 1.5,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 18),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _PrivacyPill(
+                      icon: Icons.lock_outline_rounded,
+                      text: '默认关闭',
+                    ),
+                    _PrivacyPill(
+                      icon: Icons.videocam_off_outlined,
+                      text: '不上传视频',
+                    ),
+                    _PrivacyPill(
+                      icon: Icons.delete_outline_rounded,
+                      text: '记忆可删除',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Card(
             child: Padding(
               padding: AppSpacing.cardPadding,
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.lock_outline, color: AppTheme.neutral),
-                  SizedBox(height: AppSpacing.gapSmall),
-                  Text('聊天与记忆尚未启用', style: AppText.cardTitle),
-                  SizedBox(height: 6),
-                  Text(
-                    '请先在右上角 Agent 连接中确认服务地址，并允许 Agent 使用训练数据。',
-                    style: AppText.body,
+                  Icon(Icons.shield_outlined, color: AppTheme.primary),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('由你决定分享什么', style: AppText.cardTitle),
+                        SizedBox(height: 5),
+                        Text(
+                          '开启后仅同步有限画像、当前计划和最近真实训练事实。',
+                          style: AppText.caption,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -101,7 +158,14 @@ class _CoachChatPageState extends State<CoachChatPage> {
         if (controller.chatMemoryLoading) const LinearProgressIndicator(),
         Expanded(
           child: messages.isEmpty
-              ? const _EmptyChat()
+              ? _EmptyChat(
+                  onPrompt: (prompt) {
+                    message.text = prompt;
+                    message.selection = TextSelection.collapsed(
+                      offset: message.text.length,
+                    );
+                  },
+                )
               : ListView.builder(
                   controller: scroll,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -115,10 +179,7 @@ class _CoachChatPageState extends State<CoachChatPage> {
             width: double.infinity,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4E5),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFFFFF4E5)),
             child: Text(
               controller.chatError!,
               style: const TextStyle(fontSize: 12, color: Color(0xFF8A5A12)),
@@ -126,8 +187,12 @@ class _CoachChatPageState extends State<CoachChatPage> {
           ),
         SafeArea(
           top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            decoration: const BoxDecoration(
+              color: AppTheme.canvas,
+              border: Border(top: BorderSide(color: Color(0xFFE3E9E5))),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -140,22 +205,32 @@ class _CoachChatPageState extends State<CoachChatPage> {
                     maxLength: 2000,
                     textInputAction: TextInputAction.newline,
                     decoration: const InputDecoration(
-                      hintText: '询问训练安排、恢复或一般饮食问题',
+                      hintText: '问问训练、恢复或饮食…',
                       counterText: '',
-                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 10),
-                IconButton.filled(
-                  tooltip: '发送',
-                  onPressed: controller.chatSending ? null : send,
-                  icon: controller.chatSending
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
+                SizedBox.square(
+                  dimension: 50,
+                  child: IconButton.filled(
+                    style: IconButton.styleFrom(backgroundColor: AppTheme.ai),
+                    tooltip: '发送',
+                    onPressed: controller.chatSending ? null : send,
+                    icon: controller.chatSending
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.arrow_upward_rounded),
+                  ),
                 ),
               ],
             ),
@@ -180,47 +255,121 @@ class _MemoryHeader extends StatelessWidget {
   final VoidCallback? onRefresh;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Theme.of(context).colorScheme.surfaceContainerLow,
-    child: ListTile(
-      leading: const Icon(Icons.psychology_alt_outlined),
-      title: const Text('AI 私教'),
-      subtitle: Text(
-        memory == null
-            ? loading
-                  ? '正在读取记忆…'
-                  : '尚未读取 Agent 记忆'
-            : '${memory?.chatMessages.length ?? 0} 条消息 · '
-                  '${memory?.rememberedRecordCount ?? 0} 条训练/建议记忆',
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.coachGradient,
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x24686CF6),
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
-      onTap: onOpen,
-      trailing: IconButton(
-        tooltip: '刷新记忆',
-        onPressed: onRefresh,
-        icon: const Icon(Icons.refresh),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onOpen,
+          borderRadius: BorderRadius.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const _CoachAvatar(size: 48),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Text(
+                            'AI 私教',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          SizedBox(width: 7),
+                          _OnlineBadge(),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        memory == null
+                            ? loading
+                                  ? '正在读取你的有限记忆…'
+                                  : '点击查看 Agent 记忆'
+                            : '记得 ${memory?.rememberedRecordCount ?? 0} 条训练信息 · '
+                                  '${memory?.chatMessages.length ?? 0} 条消息',
+                        style: const TextStyle(
+                          color: Color(0xFFE4E4FF),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: '刷新记忆',
+                  onPressed: onRefresh,
+                  color: Colors.white,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     ),
   );
 }
 
 class _EmptyChat extends StatelessWidget {
-  const _EmptyChat();
+  const _EmptyChat({required this.onPrompt});
+
+  final ValueChanged<String> onPrompt;
 
   @override
-  Widget build(BuildContext context) => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(28),
+  Widget build(BuildContext context) => Center(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 42, color: AppTheme.neutral),
-          SizedBox(height: 12),
-          Text('开始和私教聊聊', style: AppText.cardTitle),
-          SizedBox(height: 6),
-          Text(
-            '可询问训练安排和一般饮食建议。最近真实训练事实会随本次消息发送，不上传视频或骨架。',
+          const Icon(
+            Icons.waving_hand_rounded,
+            size: 36,
+            color: Color(0xFFE2A225),
+          ),
+          const SizedBox(height: 12),
+          const Text('今天想聊点什么？', style: AppText.sectionTitle),
+          const SizedBox(height: 6),
+          const Text(
+            '我会参考你的目标、当前计划和最近真实训练，给出一般健身建议。',
             textAlign: TextAlign.center,
             style: AppText.caption,
+          ),
+          const SizedBox(height: 20),
+          _PromptButton(
+            icon: Icons.calendar_month_rounded,
+            label: '今天适合练什么？',
+            onTap: () => onPrompt('今天适合练什么？'),
+          ),
+          const SizedBox(height: 8),
+          _PromptButton(
+            icon: Icons.history_rounded,
+            label: '根据最近训练给我建议',
+            onTap: () => onPrompt('请根据我最近的训练给出下一次建议。'),
+          ),
+          const SizedBox(height: 8),
+          _PromptButton(
+            icon: Icons.restaurant_menu_rounded,
+            label: '训练日饮食怎么安排？',
+            onTap: () => onPrompt('训练日的一般饮食应该怎么安排？'),
           ),
         ],
       ),
@@ -236,21 +385,176 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = message.role == 'user';
-    final scheme = Theme.of(context).colorScheme;
     return Align(
       alignment: user ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 520),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: user ? scheme.primaryContainer : scheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Text(message.content, style: AppText.body),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!user) ...[
+            const _CoachAvatar(size: 32),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+              decoration: BoxDecoration(
+                color: user ? AppTheme.primary : Colors.white,
+                border: user
+                    ? null
+                    : Border.all(color: const Color(0xFFE2E8E4)),
+              ),
+              child: Text(
+                message.content,
+                style: AppText.body.copyWith(
+                  color: user ? Colors.white : AppTheme.ink,
+                ),
+              ),
+            ),
+          ),
+          if (user) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDDEBE3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                size: 18,
+                color: AppTheme.primary,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
+}
+
+class _CoachAvatar extends StatelessWidget {
+  const _CoachAvatar({required this.size, this.locked = false});
+
+  final double size;
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: const Color(0x24FFFFFF),
+      shape: BoxShape.circle,
+      border: Border.all(color: const Color(0x52FFFFFF)),
+    ),
+    child: Icon(
+      locked ? Icons.lock_outline_rounded : Icons.auto_awesome_rounded,
+      color: Colors.white,
+      size: size * 0.46,
+    ),
+  );
+}
+
+class _PrivacyPill extends StatelessWidget {
+  const _PrivacyPill({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    decoration: BoxDecoration(color: const Color(0x20FFFFFF)),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white, size: 14),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _OnlineBadge extends StatelessWidget {
+  const _OnlineBadge();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(color: const Color(0x26FFFFFF)),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(radius: 3, backgroundColor: AppTheme.energy),
+        SizedBox(width: 4),
+        Text(
+          '在线',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 9,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PromptButton extends StatelessWidget {
+  const _PromptButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.zero,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.zero,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE0E6E2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: AppTheme.ai),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, size: 16),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class CoachMemoryPage extends StatefulWidget {
@@ -316,56 +620,89 @@ class _CoachMemoryPageState extends State<CoachMemoryPage> {
             : ListView(
                 padding: AppSpacing.pagePadding,
                 children: [
-                  const Text(
-                    '这里只展示 Agent 服务端保存的有限档案与聊天记录，不包含视频、图片或骨架。',
-                    style: AppText.caption,
+                  ProductHero(
+                    eyebrow: 'AGENT MEMORY · 有限记忆',
+                    title: '你决定 Agent 记住什么',
+                    subtitle: '这里仅展示服务端保存的有限档案与聊天记录，不包含视频、图片或骨架。',
+                    icon: Icons.memory_rounded,
+                    gradient: AppTheme.coachGradient,
+                    footer: Row(
+                      children: [
+                        Expanded(
+                          child: ProductMetric(
+                            value: '${memory?.chatMessages.length ?? 0}',
+                            label: '聊天消息',
+                            color: Colors.white,
+                            background: const Color(0x1FFFFFFF),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ProductMetric(
+                            value: '${memory?.rememberedRecordCount ?? 0}',
+                            label: '训练记忆',
+                            color: Colors.white,
+                            background: const Color(0x1FFFFFFF),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.gap),
+                  const SizedBox(height: 20),
+                  const ProductSectionTitle(title: '同步档案', eyebrow: 'PROFILE'),
+                  const SizedBox(height: 10),
                   _MemorySection(
-                    title: '同步档案',
                     children:
                         memory?.profile.entries
                             .map(
                               (entry) => ListTile(
                                 dense: true,
-                                title: Text(entry.key),
-                                trailing: Text('${entry.value}'),
+                                leading: const Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 19,
+                                  color: AppTheme.primary,
+                                ),
+                                title: Text(_profileLabel(entry.key)),
+                                trailing: Text(
+                                  _profileValue('${entry.value}'),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ),
                             )
                             .toList() ??
                         const [ListTile(title: Text('暂无同步档案'))],
                   ),
-                  const SizedBox(height: AppSpacing.gap),
-                  _MemorySection(
-                    title: '记忆概览',
-                    children: [
-                      ListTile(
-                        dense: true,
-                        title: const Text('聊天消息'),
-                        trailing: Text('${memory?.chatMessages.length ?? 0}'),
-                      ),
-                      ListTile(
-                        dense: true,
-                        title: const Text('训练/计划/饮食记录'),
-                        trailing: Text('${memory?.rememberedRecordCount ?? 0}'),
-                      ),
-                    ],
+                  const SizedBox(height: 12),
+                  const ProductNotice(
+                    icon: Icons.shield_outlined,
+                    title: '有限、透明、可删除',
+                    body: 'APP 本地原始训练记录不在这里；删除 Agent 记忆不会删除本地训练历史。',
+                    color: AppTheme.ai,
+                    background: Color(0xFFECEBFF),
                   ),
                   if (controller.chatError != null) ...[
                     const SizedBox(height: AppSpacing.gap),
-                    Text(
-                      controller.chatError!,
-                      style: const TextStyle(color: Color(0xFF9A6B1F)),
+                    ProductNotice(
+                      icon: Icons.error_outline_rounded,
+                      title: '读取失败',
+                      body: controller.chatError!,
+                      color: AppTheme.mockBadge,
+                      background: const Color(0xFFFFF3D8),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.gap),
-                  OutlinedButton.icon(
-                    onPressed:
-                        controller.chatMemoryLoading || controller.chatSending
-                        ? null
-                        : clear,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('删除全部 Agent 聊天与记忆'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          controller.chatMemoryLoading || controller.chatSending
+                          ? null
+                          : clear,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('删除全部 Agent 聊天与记忆'),
+                    ),
                   ),
                 ],
               ),
@@ -375,9 +712,8 @@ class _CoachMemoryPageState extends State<CoachMemoryPage> {
 }
 
 class _MemorySection extends StatelessWidget {
-  const _MemorySection({required this.title, required this.children});
+  const _MemorySection({required this.children});
 
-  final String title;
   final List<Widget> children;
 
   @override
@@ -386,14 +722,30 @@ class _MemorySection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(title, style: AppText.cardTitle),
-          ),
-          ...children,
-        ],
+        children: children,
       ),
     ),
   );
 }
+
+String _profileLabel(String value) => switch (value) {
+  'goal' => '训练目标',
+  'experience' => '运动基础',
+  'days_per_week' => '每周训练',
+  'minutes_per_session' => '单次时间',
+  'equipment' => '可用器械',
+  'dietary_preferences' => '饮食偏好',
+  _ => value,
+};
+
+String _profileValue(String value) => switch (value) {
+  'general_fitness' => '综合体能',
+  'strength' => '力量提升',
+  'fat_loss' => '减脂',
+  'mobility' => '灵活性',
+  'endurance' => '耐力',
+  'beginner' => '新手',
+  'intermediate' => '进阶',
+  'advanced' => '高级',
+  _ => value,
+};

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/models/user_profile_snapshot.dart';
+import '../../../core/theme/app_theme.dart';
+import 'product_ui.dart';
 
 class OnboardingPage extends StatefulWidget {
-  const OnboardingPage({super.key, required this.onSave, this.initial, this.onCancel});
+  const OnboardingPage({
+    super.key,
+    required this.onSave,
+    this.initial,
+    this.onCancel,
+  });
 
   final UserProfileSnapshot? initial;
   final Future<void> Function(UserProfileSnapshot) onSave;
@@ -26,20 +33,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Future<void> save() async {
     setState(() => saving = true);
     try {
-      await widget.onSave(UserProfileSnapshot(
-        goal: goal,
-        experience: experience,
-        daysPerWeek: days,
-        minutesPerSession: minutes,
-        hasEquipment: equipment,
-        hasCurrentDiscomfort: discomfort,
-        dietPreference: diet,
-      ));
+      await widget.onSave(
+        UserProfileSnapshot(
+          goal: goal,
+          experience: experience,
+          daysPerWeek: days,
+          minutesPerSession: minutes,
+          hasEquipment: equipment,
+          hasCurrentDiscomfort: discomfort,
+          dietPreference: diet,
+        ),
+      );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存失败，请重试。')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('保存失败，请重试。')));
       }
     } finally {
       if (mounted) setState(() => saving = false);
@@ -48,67 +57,180 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(widget.initial == null ? '建立你的训练档案' : '修改训练档案'),
-          leading: widget.onCancel == null
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: widget.onCancel,
+    appBar: AppBar(
+      title: Text(widget.initial == null ? '建立训练档案' : '修改训练档案'),
+      leading: widget.onCancel == null
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: widget.onCancel,
+            ),
+    ),
+    body: SafeArea(
+      child: ListView(
+        padding: AppSpacing.pagePadding,
+        children: [
+          ProductHero(
+            eyebrow: 'PERSONAL SETUP · 个人档案',
+            title: widget.initial == null ? '先了解你的节奏' : '调整你的训练节奏',
+            subtitle: '用几项必要信息安排可执行的训练路径，之后随时可以修改。',
+            icon: Icons.tune_rounded,
+            footer: const Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ProductBadge(
+                  label: '约 1 分钟',
+                  icon: Icons.timer_outlined,
+                  foreground: Colors.white,
+                  background: Color(0x24FFFFFF),
                 ),
-        ),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              const Text('只需几项信息，先安排一条可体验的训练路径。',
-                  style: TextStyle(fontSize: 18)),
-              const SizedBox(height: 20),
-              _choice('训练目标', goal,
-                  ['建立运动习惯', '提升力量', '改善体能'], (v) => setState(() => goal = v)),
-              _choice('运动基础', experience, ['新手', '有规律运动'],
-                  (v) => setState(() => experience = v)),
-              _choice('每周可训练', days, [1, 2, 3, 4],
-                  (v) => setState(() => days = v), suffix: '天'),
-              _choice('每次可用时间', minutes, [10, 15, 20, 30],
-                  (v) => setState(() => minutes = v), suffix: '分钟'),
-              SwitchListTile(
-                title: const Text('有基础训练器械'),
-                value: equipment,
-                onChanged: (v) => setState(() => equipment = v),
-              ),
-              SwitchListTile(
-                title: const Text('目前有身体不适'),
-                subtitle: const Text('勾选后暂不自动开始训练'),
-                value: discomfort,
-                onChanged: (v) => setState(() => discomfort = v),
-              ),
-              _choice('饮食偏好', diet, ['无特别偏好', '素食', '有过敏或特殊限制'],
-                  (v) => setState(() => diet = v)),
-              const SizedBox(height: 12),
-              const Text('当前版本的计划和饮食为本地示例模板；不提供医疗诊断。'),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: saving ? null : save,
-                child: Text(saving ? '保存中…' : '保存并查看今日安排'),
-              ),
-            ],
+                ProductBadge(
+                  label: '可随时修改',
+                  icon: Icons.edit_outlined,
+                  foreground: Colors.white,
+                  background: Color(0x24FFFFFF),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 20),
+          const ProductSectionTitle(title: '训练偏好', eyebrow: 'TRAINING PROFILE'),
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: AppSpacing.cardPadding,
+              child: Column(
+                children: [
+                  _choice('训练目标', goal, [
+                    '建立运动习惯',
+                    '提升力量',
+                    '改善体能',
+                  ], (v) => setState(() => goal = v)),
+                  _choice('运动基础', experience, [
+                    '新手',
+                    '有规律运动',
+                  ], (v) => setState(() => experience = v)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _choice(
+                          '每周训练',
+                          days,
+                          [1, 2, 3, 4],
+                          (v) => setState(() => days = v),
+                          suffix: ' 天',
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _choice(
+                          '单次时间',
+                          minutes,
+                          [10, 15, 20, 30],
+                          (v) => setState(() => minutes = v),
+                          suffix: ' 分钟',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const ProductSectionTitle(title: '训练条件', eyebrow: 'READINESS'),
+          const SizedBox(height: 10),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(
+                    Icons.fitness_center_rounded,
+                    color: AppTheme.primary,
+                  ),
+                  title: const Text('有基础训练器械'),
+                  subtitle: const Text('用于调整可选择的训练动作'),
+                  value: equipment,
+                  onChanged: (v) => setState(() => equipment = v),
+                ),
+                const Divider(),
+                SwitchListTile(
+                  secondary: const Icon(
+                    Icons.health_and_safety_outlined,
+                    color: Color(0xFFB65F42),
+                  ),
+                  title: const Text('目前有身体不适'),
+                  subtitle: const Text('开启后暂不自动提供训练入口'),
+                  value: discomfort,
+                  onChanged: (v) => setState(() => discomfort = v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const ProductSectionTitle(title: '饮食偏好', eyebrow: 'DAILY FUEL'),
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: AppSpacing.cardPadding,
+              child: _choice(
+                '偏好或限制',
+                diet,
+                ['无特别偏好', '素食', '有过敏或特殊限制'],
+                (v) => setState(() => diet = v),
+                bottomPadding: 0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const ProductNotice(
+            icon: Icons.info_outline_rounded,
+            title: '建议范围',
+            body: '计划和饮食用于一般健身体验，不提供医疗诊断或治疗。',
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.energy,
+                foregroundColor: AppTheme.ink,
+              ),
+              onPressed: saving ? null : save,
+              icon: Icon(
+                saving
+                    ? Icons.hourglass_top_rounded
+                    : Icons.arrow_forward_rounded,
+              ),
+              label: Text(saving ? '保存中…' : '保存并查看今日安排'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
-  Widget _choice<T>(String label, T value, List<T> values, ValueChanged<T> onChange,
-      {String suffix = ''}) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: DropdownButtonFormField<T>(
-          initialValue: value,
-          decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-          items: values
-              .map((v) => DropdownMenuItem(value: v, child: Text('$v$suffix')))
-              .toList(),
-          onChanged: (v) {
-            if (v != null) onChange(v);
-          },
-        ),
-      );
+  Widget _choice<T>(
+    String label,
+    T value,
+    List<T> values,
+    ValueChanged<T> onChange, {
+    String suffix = '',
+    double bottomPadding = 12,
+  }) => Padding(
+    padding: EdgeInsets.only(bottom: bottomPadding),
+    child: DropdownButtonFormField<T>(
+      initialValue: value,
+      borderRadius: BorderRadius.zero,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: values
+          .map((v) => DropdownMenuItem(value: v, child: Text('$v$suffix')))
+          .toList(),
+      onChanged: (v) {
+        if (v != null) onChange(v);
+      },
+    ),
+  );
 }

@@ -57,7 +57,11 @@ void main() {
         tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
         isFalse,
       );
-      await tester.ensureVisible(find.text('保存配置'));
+      await tester.scrollUntilVisible(
+        find.text('保存配置'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('保存配置'));
       await tester.pumpAndSettle();
       expect(controller.connection.allowDataUpload, isFalse);

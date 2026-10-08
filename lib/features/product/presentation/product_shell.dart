@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/session_result.dart';
 import '../../../core/models/training_launch_args.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../training_contract/training_gateway.dart';
 import '../domain/product_controller.dart';
 import 'history_page.dart';
@@ -52,24 +53,52 @@ class _ProductShellState extends State<ProductShell> {
     final targetReps = profile.experience == '新手' ? 6 : 8;
     final exerciseId = await showModalBottomSheet<String>(
       context: context,
-      showDragHandle: true,
+      showDragHandle: false,
       builder: (sheetContext) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '选择自由训练动作',
-                style: Theme.of(sheetContext).textTheme.titleLarge,
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    color: const Color(0xFFE5F0E9),
+                    child: const Icon(
+                      Icons.directions_run_rounded,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('选择自由训练动作', style: AppText.cardTitle),
+                        SizedBox(height: 2),
+                        Text('FREE TRAINING · 单动作体验', style: AppText.caption),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text('每次选择一个动作，本次建议目标 $targetReps 次。'),
               const SizedBox(height: 12),
+              Text('每次选择一个动作，本次建议目标 $targetReps 次。'),
+              const SizedBox(height: 14),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.accessibility_new),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    color: const Color(0xFFEAF0EB),
+                    child: const Icon(
+                      Icons.accessibility_new,
+                      color: AppTheme.primary,
+                    ),
+                  ),
                   title: const Text('徒手深蹲'),
                   subtitle: Text('1 组 × $targetReps 次'),
                   trailing: const Icon(Icons.chevron_right),
@@ -79,7 +108,12 @@ class _ProductShellState extends State<ProductShell> {
               const SizedBox(height: 8),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.fitness_center),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    color: const Color(0xFFECEBFF),
+                    child: const Icon(Icons.fitness_center, color: AppTheme.ai),
+                  ),
                   title: const Text('俯卧撑'),
                   subtitle: Text('1 组 × $targetReps 次'),
                   trailing: const Icon(Icons.chevron_right),
@@ -177,6 +211,7 @@ class _ProductShellState extends State<ProductShell> {
           controller: widget.controller,
           onStart: startPlannedTraining,
           onStartFree: startFreeTraining,
+          onOpenCoach: () => setState(() => tab = 4),
           onEditProfile: () => setState(() => editing = true),
           busy: busy,
         ),
@@ -191,7 +226,39 @@ class _ProductShellState extends State<ProductShell> {
       ];
       return Scaffold(
         appBar: AppBar(
-          title: const Text('动姿智护'),
+          toolbarHeight: 64,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(gradient: AppTheme.heroGradient),
+                child: const Icon(
+                  Icons.motion_photos_on_rounded,
+                  size: 20,
+                  color: AppTheme.energy,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('动姿智护'),
+                  Text(
+                    'AI FITNESS COACH',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: Color(0xFF708078),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           actions: [
             IconButton(
               tooltip: 'Agent 连接',
@@ -213,25 +280,49 @@ class _ProductShellState extends State<ProductShell> {
           ],
         ),
         body: SafeArea(child: screens[tab]),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: tab,
-          onDestinationSelected: (index) => setState(() => tab = index),
-          destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), label: '首页'),
-            NavigationDestination(
-              icon: Icon(Icons.calendar_today_outlined),
-              label: '计划',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.restaurant_outlined),
-              label: '饮食',
-            ),
-            NavigationDestination(icon: Icon(Icons.history), label: '记录'),
-            NavigationDestination(
-              icon: Icon(Icons.chat_bubble_outline),
-              label: '教练',
-            ),
-          ],
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFE4EAE5))),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x100B2E24),
+                blurRadius: 20,
+                offset: Offset(0, -4),
+              ),
+            ],
+          ),
+          child: NavigationBar(
+            selectedIndex: tab,
+            onDestinationSelected: (index) => setState(() => tab = index),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: '首页',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.calendar_today_outlined),
+                selectedIcon: Icon(Icons.calendar_month_rounded),
+                label: '计划',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.restaurant_outlined),
+                selectedIcon: Icon(Icons.restaurant_rounded),
+                label: '饮食',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_rounded),
+                selectedIcon: Icon(Icons.history_toggle_off_rounded),
+                label: '记录',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.auto_awesome_outlined),
+                selectedIcon: Icon(Icons.auto_awesome_rounded),
+                label: '教练',
+              ),
+            ],
+          ),
         ),
       );
     },
