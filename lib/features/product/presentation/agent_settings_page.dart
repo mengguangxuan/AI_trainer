@@ -20,6 +20,7 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
   late bool consent;
   bool busy = false;
   String? status;
+  bool statusIsError = false;
 
   @override
   void initState() {
@@ -47,12 +48,18 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
     setState(() {
       busy = true;
       status = null;
+      statusIsError = false;
     });
     try {
       final message = await action();
       if (mounted) setState(() => status = message);
     } catch (error) {
-      if (mounted) setState(() => status = error.toString());
+      if (mounted) {
+        setState(() {
+          status = error.toString();
+          statusIsError = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -96,14 +103,15 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
             title: consent ? 'AI 教练已授权连接' : '连接你的 AI 教练',
             subtitle: '模型密钥保留在服务端；APP 这里只保存服务地址和开发访问凭据。',
             icon: Icons.hub_rounded,
-            gradient: AppTheme.coachGradient,
+            background: const Color(0xFFF6F5FF),
+            accent: AppTheme.ai,
             footer: ProductBadge(
               label: consent ? '允许有限数据同步' : '当前为本地模式',
               icon: consent
                   ? Icons.cloud_done_outlined
                   : Icons.smartphone_rounded,
-              foreground: Colors.white,
-              background: const Color(0x24FFFFFF),
+              foreground: AppTheme.ai,
+              background: const Color(0xFFECEBFF),
             ),
           ),
           const SizedBox(height: 20),
@@ -144,7 +152,17 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
           const SizedBox(height: 20),
           const ProductSectionTitle(title: '数据授权', eyebrow: 'PRIVACY FIRST'),
           const SizedBox(height: 10),
-          Card(
+          Material(
+            color: consent ? const Color(0xFFF1F0FF) : const Color(0xFFF7F8F6),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.large,
+              side: BorderSide(
+                color: consent
+                    ? AppTheme.ai.withValues(alpha: 0.22)
+                    : const Color(0xFFE2E7E3),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: SwitchListTile(
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
@@ -153,7 +171,10 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
               secondary: Container(
                 width: 42,
                 height: 42,
-                color: const Color(0xFFECEBFF),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFECEBFF),
+                  borderRadius: AppRadius.medium,
+                ),
                 child: const Icon(Icons.shield_outlined, color: AppTheme.ai),
               ),
               title: const Text('允许 Agent 使用训练数据'),
@@ -206,13 +227,16 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
             ),
           if (status != null) ...[
             const SizedBox(height: 12),
-            ProductNotice(
-              icon: Icons.info_outline_rounded,
-              title: '连接状态',
-              body: status!,
-              color: AppTheme.ai,
-              background: const Color(0xFFECEBFF),
-            ),
+            if (statusIsError)
+              ErrorState(title: '连接失败', body: status!)
+            else
+              ProductNotice(
+                icon: Icons.check_circle_outline_rounded,
+                title: '连接状态',
+                body: status!,
+                color: AppTheme.ai,
+                background: const Color(0xFFECEBFF),
+              ),
           ],
           const SizedBox(height: 20),
           const ProductSectionTitle(title: '数据管理', eyebrow: 'YOUR CONTROL'),
@@ -226,7 +250,10 @@ class _AgentSettingsPageState extends State<AgentSettingsPage> {
               leading: Container(
                 width: 42,
                 height: 42,
-                color: const Color(0xFFFFEEE8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFEEE8),
+                  borderRadius: AppRadius.medium,
+                ),
                 child: const Icon(
                   Icons.delete_outline,
                   color: Color(0xFFB65F42),

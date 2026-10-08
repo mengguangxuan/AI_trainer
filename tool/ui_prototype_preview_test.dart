@@ -173,7 +173,7 @@ void main() {
       matchesGoldenFile('../docs/ui-prototype/history.png'),
     );
 
-    await tester.tap(find.text('已完成训练'));
+    await tester.tap(find.text('训练已完成'));
     await tester.pumpAndSettle();
     await expectLater(
       find.byKey(const ValueKey('prototype')),

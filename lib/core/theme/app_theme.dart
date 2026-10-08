@@ -33,6 +33,9 @@ class AppTheme {
   /// 模拟来源标注（琥珀色，明显但非警告）
   static const mockBadge = Color(0xFF9A6B1F);
 
+  /// 错误态；取消和中断不使用该颜色。
+  static const error = Color(0xFFB85C44);
+
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -85,19 +88,24 @@ class AppTheme {
         color: Colors.white,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: const RoundedRectangleBorder(),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.large,
+          side: BorderSide(color: Color(0xFFE5EAE6)),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-          shape: const RoundedRectangleBorder(),
+          minimumSize: const Size(44, 50),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
           textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
-          shape: const RoundedRectangleBorder(),
+          minimumSize: const Size(44, 48),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
           side: const BorderSide(color: Color(0xFFB9C7BE)),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -106,7 +114,9 @@ class AppTheme {
         height: 70,
         backgroundColor: Colors.white,
         indicatorColor: const Color(0xFFDFF2E8),
-        indicatorShape: const RoundedRectangleBorder(),
+        indicatorShape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.medium,
+        ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
@@ -136,27 +146,38 @@ class AppTheme {
           vertical: 14,
         ),
         border: const OutlineInputBorder(
+          borderRadius: AppRadius.medium,
           borderSide: BorderSide(color: Color(0xFFDCE5DF)),
         ),
         enabledBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.medium,
           borderSide: BorderSide(color: Color(0xFFDCE5DF)),
         ),
         focusedBorder: const OutlineInputBorder(
+          borderRadius: AppRadius.medium,
           borderSide: BorderSide(color: primary, width: 1.5),
         ),
       ),
       chipTheme: ChipThemeData(
         side: BorderSide.none,
         backgroundColor: colors.surfaceContainerLow,
-        shape: const RoundedRectangleBorder(),
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
       ),
-      dialogTheme: const DialogThemeData(shape: RoundedRectangleBorder()),
+      dialogTheme: const DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.large),
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
-        shape: RoundedRectangleBorder(),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
       ),
-      popupMenuTheme: const PopupMenuThemeData(shape: RoundedRectangleBorder()),
-      snackBarTheme: const SnackBarThemeData(shape: RoundedRectangleBorder()),
+      popupMenuTheme: const PopupMenuThemeData(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.medium),
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.medium),
+      ),
       dividerTheme: const DividerThemeData(
         color: Color(0xFFE8ECE9),
         thickness: 1,
@@ -164,6 +185,15 @@ class AppTheme {
       ),
     );
   }
+}
+
+/// 圆角层级：只按组件语义选用，避免页面内散落任意半径。
+class AppRadius {
+  static const small = BorderRadius.all(Radius.circular(8));
+  static const medium = BorderRadius.all(Radius.circular(12));
+  static const large = BorderRadius.all(Radius.circular(16));
+  static const hero = BorderRadius.all(Radius.circular(20));
+  static const pill = BorderRadius.all(Radius.circular(999));
 }
 
 /// 排版与间距常量：全站统一。

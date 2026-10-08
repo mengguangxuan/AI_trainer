@@ -38,21 +38,25 @@ class PlanPage extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              ProductBadge(
+              SourceBadge(
                 label: sourceLabel,
-                icon: plan.source == 'agent'
-                    ? Icons.auto_awesome_rounded
-                    : Icons.layers_outlined,
-                foreground: Colors.white,
-                background: const Color(0x24FFFFFF),
+                kind: plan.source == 'agent'
+                    ? SourceBadgeKind.agent
+                    : controller.planUsingFallback
+                    ? SourceBadgeKind.local
+                    : SourceBadgeKind.service,
               ),
               ProductBadge(
                 label: item == null ? '恢复日' : '可开始训练',
                 icon: item == null
                     ? Icons.self_improvement_rounded
                     : Icons.play_arrow_rounded,
-                foreground: AppTheme.ink,
-                background: AppTheme.energy,
+                foreground: item == null
+                    ? AppTheme.primary
+                    : AppTheme.deepGreen,
+                background: item == null
+                    ? const Color(0xFFE6F0EA)
+                    : AppTheme.energy,
               ),
             ],
           ),
@@ -81,7 +85,10 @@ class PlanPage extends StatelessWidget {
                       Container(
                         width: 46,
                         height: 46,
-                        color: const Color(0xFFE5F0E9),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE5F0E9),
+                          borderRadius: AppRadius.medium,
+                        ),
                         child: const Icon(
                           Icons.fitness_center_rounded,
                           color: AppTheme.primary,
@@ -133,19 +140,11 @@ class PlanPage extends StatelessWidget {
           ),
         if (item != null) ...[
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.energy,
-                foregroundColor: AppTheme.ink,
-              ),
-              onPressed: busy ? null : onStart,
-              icon: Icon(
-                busy ? Icons.hourglass_top_rounded : Icons.play_arrow_rounded,
-              ),
-              label: Text(busy ? '正在打开…' : '开始这项训练'),
-            ),
+          PrimaryActionButton(
+            label: '开始这项训练',
+            icon: Icons.play_arrow_rounded,
+            loading: busy,
+            onPressed: busy ? null : onStart,
           ),
         ],
         const SizedBox(height: 18),

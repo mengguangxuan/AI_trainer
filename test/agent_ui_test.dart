@@ -14,6 +14,8 @@ import 'package:ai_fitness_d_starter/features/product/domain/product_controller.
 import 'package:ai_fitness_d_starter/features/product/presentation/agent_settings_page.dart';
 import 'package:ai_fitness_d_starter/features/product/presentation/coach_chat_page.dart';
 import 'package:ai_fitness_d_starter/features/product/presentation/home_page.dart';
+import 'package:ai_fitness_d_starter/features/product/presentation/history_page.dart';
+import 'package:ai_fitness_d_starter/features/product/presentation/onboarding_page.dart';
 import 'package:ai_fitness_d_starter/features/product/presentation/session_summary_page.dart';
 
 void main() {
@@ -141,6 +143,62 @@ void main() {
     expect(find.text('6'), findsOneWidget);
     await tester.ensureVisible(find.text('重试教练总结'));
     expect(find.text('模型未配置'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('profile choice controls fit a 360px screen', (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: OnboardingPage(onSave: (_) async {}),
+      ),
+    );
+    expect(find.byType(ChoiceChip), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('保存并查看今日安排'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('history distinguishes completed cancelled and interrupted', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    controller.history = [
+      for (final status in ['completed', 'cancelled', 'interrupted'])
+        SessionResult(
+          sessionId: 'history-$status',
+          status: status,
+          finishedAt: DateTime.now(),
+          durationSeconds: 20,
+          source: status == 'completed' ? 'real' : 'mock',
+          exercises: const [
+            SessionExercise(
+              exerciseId: 'squat',
+              completedSets: 1,
+              completedReps: 6,
+            ),
+          ],
+        ),
+    ];
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: HistoryPage(controller: controller)),
+      ),
+    );
+    expect(find.text('已完成'), findsOneWidget);
+    expect(find.text('已取消'), findsOneWidget);
+    expect(find.text('已中断'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

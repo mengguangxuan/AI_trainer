@@ -54,6 +54,23 @@ class SessionSummaryPage extends StatelessWidget {
     // cancelled/interrupted 只显示进度，不判断为“达到目标”。
     final reachedTarget =
         completed && targetReps != null && reps >= targetReps!;
+    final statusTitle = !saved
+        ? '训练结束，记录未保存'
+        : switch (result.status) {
+            'completed' => '本次训练已完成',
+            'cancelled' => '本次训练已取消',
+            _ => '本次训练已中断',
+          };
+    final statusAccent = completed
+        ? AppTheme.success
+        : result.status == 'cancelled'
+        ? AppTheme.neutral
+        : AppTheme.mockBadge;
+    final statusBackground = completed
+        ? const Color(0xFFF1F7F3)
+        : result.status == 'cancelled'
+        ? const Color(0xFFF4F5F4)
+        : const Color(0xFFFFF8E9);
 
     return Scaffold(
       appBar: AppBar(title: const Text('训练总结', style: AppText.pageTitle)),
@@ -63,28 +80,25 @@ class SessionSummaryPage extends StatelessWidget {
           children: [
             ProductHero(
               eyebrow: 'SESSION RESULT · 训练结果',
-              title: !saved
-                  ? '训练结束，记录未保存'
-                  : completed
-                  ? '本次训练已完成'
-                  : '本次训练未完成',
+              title: statusTitle,
               subtitle: completed
                   ? '保持自己的节奏，每一次完成都会沉淀为训练记录。'
                   : '本次只展示实际进度，不将中止或取消误判为完成。',
-              icon: completed ? Icons.check_rounded : Icons.pause_rounded,
-              gradient: completed
-                  ? AppTheme.heroGradient
-                  : const LinearGradient(
-                      colors: [Color(0xFF525B57), Color(0xFF747D79)],
-                    ),
+              icon: completed
+                  ? Icons.check_rounded
+                  : result.status == 'cancelled'
+                  ? Icons.close_rounded
+                  : Icons.pause_rounded,
+              background: statusBackground,
+              accent: statusAccent,
               footer: Row(
                 children: [
                   Expanded(
                     child: ProductMetric(
                       value: '$reps',
                       label: '完成次数',
-                      color: Colors.white,
-                      background: const Color(0x1FFFFFFF),
+                      color: statusAccent,
+                      background: Colors.white,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -92,8 +106,8 @@ class SessionSummaryPage extends StatelessWidget {
                     child: ProductMetric(
                       value: '${exercise?.completedSets ?? 0}',
                       label: '完成组数',
-                      color: Colors.white,
-                      background: const Color(0x1FFFFFFF),
+                      color: statusAccent,
+                      background: Colors.white,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -101,19 +115,50 @@ class SessionSummaryPage extends StatelessWidget {
                     child: ProductMetric(
                       value: '${result.durationSeconds}',
                       label: '训练秒数',
-                      color: Colors.white,
-                      background: const Color(0x1FFFFFFF),
+                      color: statusAccent,
+                      background: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
 
+            const SizedBox(height: AppSpacing.gapSmall),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                SemanticStatusBadge(status: result.status),
+                SourceBadge(
+                  label: result.source == 'real'
+                      ? '真实训练'
+                      : result.source == 'mock'
+                      ? '模拟训练'
+                      : '来源未确认',
+                  kind: result.source == 'real'
+                      ? SourceBadgeKind.real
+                      : result.source == 'mock'
+                      ? SourceBadgeKind.mock
+                      : SourceBadgeKind.unknown,
+                ),
+                if (!saved)
+                  const ProductBadge(
+                    label: '记录未保存',
+                    foreground: AppTheme.error,
+                    background: Color(0xFFFFEEE8),
+                    icon: Icons.error_outline_rounded,
+                  ),
+              ],
+            ),
+
             if (targetReps != null) ...[
               const SizedBox(height: AppSpacing.gapSmall),
               Container(
                 padding: const EdgeInsets.all(14),
-                color: Colors.white,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppRadius.medium,
+                ),
                 child: Column(
                   children: [
                     Row(
@@ -153,47 +198,28 @@ class SessionSummaryPage extends StatelessWidget {
               ),
             ],
 
-            // —— 模拟来源标注：紧跟结果卡，颜色区分，不可误读 ——
+            // —— 模拟来源标注：颜色区分，不可误读 ——
             if (result.source == 'mock')
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.gapSmall),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.mockBadge.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: AppTheme.mockBadge.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(
-                        Icons.science_outlined,
-                        size: 14,
-                        color: AppTheme.mockBadge,
-                      ),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          '模拟训练结果 · 次数与反馈不来自摄像头识别',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.mockBadge,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: const ProductNotice(
+                  icon: Icons.science_outlined,
+                  title: '模拟训练结果',
+                  body: '次数与反馈不来自摄像头识别，不计作真实识别证据。',
+                  color: AppTheme.mockBadge,
+                  background: Color(0xFFFFF8E9),
                 ),
               )
             else if (result.source != 'real')
-              Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.gapSmall),
-                child: Text('结果来源未确认', style: AppText.caption),
+              const Padding(
+                padding: EdgeInsets.only(top: AppSpacing.gapSmall),
+                child: ProductNotice(
+                  icon: Icons.help_outline_rounded,
+                  title: '结果来源未确认',
+                  body: '保留训练状态和实际返回数据，但不将来源推断为真实或模拟。',
+                  color: AppTheme.neutral,
+                  background: Color(0xFFF1F3F1),
+                ),
               ),
 
             const SizedBox(height: AppSpacing.gap),
@@ -221,27 +247,14 @@ class SessionSummaryPage extends StatelessWidget {
               const SizedBox(height: 20),
               const ProductSectionTitle(title: '教练反馈', eyebrow: 'AI REVIEW'),
               const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: AppSpacing.cardPadding,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        agentSummary?.agentSummary ?? result.agentSummary!,
-                        style: AppText.body,
-                      ),
-                      if (agentSummary != null &&
-                          agentSummary.limitations.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.gapSmall),
-                        Text(
-                          '说明：${agentSummary.limitations.join(' ')}',
-                          style: AppText.caption,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+              CoachFeedbackCard(
+                state: CoachFeedbackState.success,
+                title: 'AI 私教总结',
+                body: agentSummary?.agentSummary ?? result.agentSummary!,
+                caption:
+                    agentSummary != null && agentSummary.limitations.isNotEmpty
+                    ? '说明：${agentSummary.limitations.join(' ')}'
+                    : null,
               ),
             ],
 
@@ -250,29 +263,35 @@ class SessionSummaryPage extends StatelessWidget {
                 controller != null &&
                 agentSummary == null) ...[
               if (controller!.summarizing.contains(result.sessionId))
-                const ListTile(
-                  leading: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  title: Text('教练正在生成总结'),
+                const CoachFeedbackCard(
+                  state: CoachFeedbackState.loading,
+                  title: '教练正在生成总结',
+                  body: '原始训练已经保存，生成过程不会影响本次完成记录。',
                 )
-              else ...[
-                Text(
-                  controller!.summaryErrors[result.sessionId] ??
-                      (controller!.connection.allowDataUpload
-                          ? '原始训练已保存。'
-                          : '本地模式：未发送训练数据。'),
-                  style: AppText.caption,
+              else if (controller!.summaryErrors[result.sessionId] != null)
+                CoachFeedbackCard(
+                  state: CoachFeedbackState.error,
+                  title: '教练总结生成失败',
+                  body: controller!.summaryErrors[result.sessionId]!,
+                  onRetry: controller!.connection.allowDataUpload
+                      ? () => controller!.retrySummary(result)
+                      : null,
+                  retryLabel: '重试教练总结',
+                )
+              else
+                CoachFeedbackCard(
+                  state: CoachFeedbackState.fallback,
+                  title: controller!.connection.allowDataUpload
+                      ? '尚未生成教练总结'
+                      : '本地模式',
+                  body: controller!.connection.allowDataUpload
+                      ? '原始训练已保存，可以再次请求教练总结。'
+                      : '原始训练已保存在本机，未向 Agent 发送训练数据。',
+                  onRetry: controller!.connection.allowDataUpload
+                      ? () => controller!.retrySummary(result)
+                      : null,
+                  retryLabel: '重试教练总结',
                 ),
-                if (controller!.connection.allowDataUpload)
-                  TextButton.icon(
-                    onPressed: () => controller!.retrySummary(result),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('重试教练总结'),
-                  ),
-              ],
               const SizedBox(height: AppSpacing.gap),
             ],
             ProductNotice(
@@ -283,12 +302,10 @@ class SessionSummaryPage extends StatelessWidget {
                   : '本次没有确认的下一次计划调整。',
             ),
             const SizedBox(height: AppSpacing.gap),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('返回'),
-              ),
+            PrimaryActionButton(
+              label: '返回',
+              icon: Icons.arrow_back_rounded,
+              onPressed: () => Navigator.pop(context),
             ),
           ],
         ),
@@ -321,7 +338,7 @@ class _Progress extends StatelessWidget {
   Widget build(BuildContext context) {
     final ratio = target <= 0 ? 0.0 : (reps / target).clamp(0.0, 1.0);
     return ClipRRect(
-      borderRadius: BorderRadius.zero,
+      borderRadius: AppRadius.pill,
       child: LinearProgressIndicator(
         value: ratio,
         minHeight: 6,

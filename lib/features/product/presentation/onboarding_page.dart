@@ -79,18 +79,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                ProductBadge(
-                  label: '约 1 分钟',
-                  icon: Icons.timer_outlined,
-                  foreground: Colors.white,
-                  background: Color(0x24FFFFFF),
-                ),
-                ProductBadge(
-                  label: '可随时修改',
-                  icon: Icons.edit_outlined,
-                  foreground: Colors.white,
-                  background: Color(0x24FFFFFF),
-                ),
+                ProductBadge(label: '约 1 分钟', icon: Icons.timer_outlined),
+                ProductBadge(label: '可随时修改', icon: Icons.edit_outlined),
               ],
             ),
           ),
@@ -111,28 +101,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     '新手',
                     '有规律运动',
                   ], (v) => setState(() => experience = v)),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _choice(
-                          '每周训练',
-                          days,
-                          [1, 2, 3, 4],
-                          (v) => setState(() => days = v),
-                          suffix: ' 天',
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _choice(
-                          '单次时间',
-                          minutes,
-                          [10, 15, 20, 30],
-                          (v) => setState(() => minutes = v),
-                          suffix: ' 分钟',
-                        ),
-                      ),
-                    ],
+                  _choice(
+                    '每周训练',
+                    days,
+                    [1, 2, 3, 4],
+                    (v) => setState(() => days = v),
+                    suffix: ' 天',
+                  ),
+                  _choice(
+                    '单次时间',
+                    minutes,
+                    [10, 15, 20, 30],
+                    (v) => setState(() => minutes = v),
+                    suffix: ' 分钟',
+                    bottomPadding: 0,
                   ),
                 ],
               ),
@@ -190,21 +172,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
             body: '计划和饮食用于一般健身体验，不提供医疗诊断或治疗。',
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.energy,
-                foregroundColor: AppTheme.ink,
-              ),
-              onPressed: saving ? null : save,
-              icon: Icon(
-                saving
-                    ? Icons.hourglass_top_rounded
-                    : Icons.arrow_forward_rounded,
-              ),
-              label: Text(saving ? '保存中…' : '保存并查看今日安排'),
-            ),
+          PrimaryActionButton(
+            label: '保存并查看今日安排',
+            icon: Icons.arrow_forward_rounded,
+            loading: saving,
+            onPressed: saving ? null : save,
           ),
         ],
       ),
@@ -220,17 +192,38 @@ class _OnboardingPageState extends State<OnboardingPage> {
     double bottomPadding = 12,
   }) => Padding(
     padding: EdgeInsets.only(bottom: bottomPadding),
-    child: DropdownButtonFormField<T>(
-      initialValue: value,
-      borderRadius: BorderRadius.zero,
-      isExpanded: true,
-      decoration: InputDecoration(labelText: label),
-      items: values
-          .map((v) => DropdownMenuItem(value: v, child: Text('$v$suffix')))
-          .toList(),
-      onChanged: (v) {
-        if (v != null) onChange(v);
-      },
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppText.caption.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: values
+              .map(
+                (option) => ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: ChoiceChip(
+                    label: Text('$option$suffix'),
+                    selected: option == value,
+                    showCheckmark: false,
+                    selectedColor: const Color(0xFFDFF2E8),
+                    side: BorderSide(
+                      color: option == value
+                          ? AppTheme.primary
+                          : const Color(0xFFDCE5DF),
+                    ),
+                    onSelected: (_) => onChange(option),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
     ),
   );
 }

@@ -63,7 +63,10 @@ class _CoachChatPageState extends State<CoachChatPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(gradient: AppTheme.coachGradient),
+            decoration: const BoxDecoration(
+              gradient: AppTheme.coachGradient,
+              borderRadius: AppRadius.hero,
+            ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -179,7 +182,10 @@ class _CoachChatPageState extends State<CoachChatPage> {
             width: double.infinity,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFFFFF4E5)),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFF4E5),
+              borderRadius: AppRadius.medium,
+            ),
             child: Text(
               controller.chatError!,
               style: const TextStyle(fontSize: 12, color: Color(0xFF8A5A12)),
@@ -260,6 +266,7 @@ class _MemoryHeader extends StatelessWidget {
     child: Container(
       decoration: BoxDecoration(
         gradient: AppTheme.coachGradient,
+        borderRadius: AppRadius.hero,
         boxShadow: const [
           BoxShadow(
             color: Color(0x24686CF6),
@@ -272,7 +279,7 @@ class _MemoryHeader extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onOpen,
-          borderRadius: BorderRadius.zero,
+          borderRadius: AppRadius.hero,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -392,7 +399,7 @@ class _MessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!user) ...[
-            const _CoachAvatar(size: 32),
+            const _CoachAvatar(size: 32, tonal: true),
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -402,6 +409,12 @@ class _MessageBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
               decoration: BoxDecoration(
                 color: user ? AppTheme.primary : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(user ? 16 : 5),
+                  bottomRight: Radius.circular(user ? 5 : 16),
+                ),
                 border: user
                     ? null
                     : Border.all(color: const Color(0xFFE2E8E4)),
@@ -437,23 +450,30 @@ class _MessageBubble extends StatelessWidget {
 }
 
 class _CoachAvatar extends StatelessWidget {
-  const _CoachAvatar({required this.size, this.locked = false});
+  const _CoachAvatar({
+    required this.size,
+    this.locked = false,
+    this.tonal = false,
+  });
 
   final double size;
   final bool locked;
+  final bool tonal;
 
   @override
   Widget build(BuildContext context) => Container(
     width: size,
     height: size,
     decoration: BoxDecoration(
-      color: const Color(0x24FFFFFF),
+      color: tonal ? const Color(0xFFECEBFF) : const Color(0x24FFFFFF),
       shape: BoxShape.circle,
-      border: Border.all(color: const Color(0x52FFFFFF)),
+      border: Border.all(
+        color: tonal ? const Color(0xFFD9D7FF) : const Color(0x52FFFFFF),
+      ),
     ),
     child: Icon(
       locked ? Icons.lock_outline_rounded : Icons.auto_awesome_rounded,
-      color: Colors.white,
+      color: tonal ? AppTheme.ai : Colors.white,
       size: size * 0.46,
     ),
   );
@@ -468,7 +488,10 @@ class _PrivacyPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-    decoration: BoxDecoration(color: const Color(0x20FFFFFF)),
+    decoration: const BoxDecoration(
+      color: Color(0x20FFFFFF),
+      borderRadius: AppRadius.pill,
+    ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -493,7 +516,10 @@ class _OnlineBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-    decoration: BoxDecoration(color: const Color(0x26FFFFFF)),
+    decoration: const BoxDecoration(
+      color: Color(0x26FFFFFF),
+      borderRadius: AppRadius.pill,
+    ),
     child: const Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -526,14 +552,15 @@ class _PromptButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
     color: Colors.white,
-    borderRadius: BorderRadius.zero,
+    borderRadius: AppRadius.medium,
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.zero,
+      borderRadius: AppRadius.medium,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
+          borderRadius: AppRadius.medium,
           border: Border.all(color: const Color(0xFFE0E6E2)),
         ),
         child: Row(
@@ -616,7 +643,15 @@ class _CoachMemoryPageState extends State<CoachMemoryPage> {
           ],
         ),
         body: controller.chatMemoryLoading && memory == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: Padding(
+                  padding: AppSpacing.pagePadding,
+                  child: LoadingState(
+                    title: '正在读取 Agent 记忆',
+                    body: '这里只会读取有限档案、训练摘要和聊天记录。',
+                  ),
+                ),
+              )
             : ListView(
                 padding: AppSpacing.pagePadding,
                 children: [
@@ -625,15 +660,16 @@ class _CoachMemoryPageState extends State<CoachMemoryPage> {
                     title: '你决定 Agent 记住什么',
                     subtitle: '这里仅展示服务端保存的有限档案与聊天记录，不包含视频、图片或骨架。',
                     icon: Icons.memory_rounded,
-                    gradient: AppTheme.coachGradient,
+                    background: const Color(0xFFF6F5FF),
+                    accent: AppTheme.ai,
                     footer: Row(
                       children: [
                         Expanded(
                           child: ProductMetric(
                             value: '${memory?.chatMessages.length ?? 0}',
                             label: '聊天消息',
-                            color: Colors.white,
-                            background: const Color(0x1FFFFFFF),
+                            color: AppTheme.ai,
+                            background: const Color(0xFFECEBFF),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -641,8 +677,8 @@ class _CoachMemoryPageState extends State<CoachMemoryPage> {
                           child: ProductMetric(
                             value: '${memory?.rememberedRecordCount ?? 0}',
                             label: '训练记忆',
-                            color: Colors.white,
-                            background: const Color(0x1FFFFFFF),
+                            color: AppTheme.primary,
+                            background: const Color(0xFFEAF0EB),
                           ),
                         ),
                       ],

@@ -26,18 +26,15 @@ class NutritionPage extends StatelessWidget {
           title: '吃得均衡，练得稳定',
           subtitle: '围绕你的训练目标提供一般饮食提示，不追求复杂计算。',
           icon: Icons.restaurant_menu_rounded,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7B5015), Color(0xFFAA7017), Color(0xFFC88B2A)],
-          ),
-          footer: ProductBadge(
+          background: const Color(0xFFFFFBF2),
+          accent: const Color(0xFFAA7017),
+          footer: SourceBadge(
             label: sourceLabel,
-            icon: advice.source == 'agent'
-                ? Icons.auto_awesome_rounded
-                : Icons.layers_outlined,
-            foreground: Colors.white,
-            background: const Color(0x28FFFFFF),
+            kind: advice.source == 'agent'
+                ? SourceBadgeKind.agent
+                : controller.nutritionUsingFallback
+                ? SourceBadgeKind.local
+                : SourceBadgeKind.service,
           ),
         ),
         const SizedBox(height: 20),
@@ -55,7 +52,10 @@ class NutritionPage extends StatelessWidget {
                     Container(
                       width: 46,
                       height: 46,
-                      color: const Color(0xFFFFF1D2),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFF1D2),
+                        borderRadius: AppRadius.medium,
+                      ),
                       child: const Icon(
                         Icons.ramen_dining_rounded,
                         color: Color(0xFFAA7017),
@@ -71,7 +71,10 @@ class NutritionPage extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(15),
-                  color: const Color(0xFFFFF8E9),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF8E9),
+                    borderRadius: AppRadius.medium,
+                  ),
                   child: Text(advice.body, style: AppText.body),
                 ),
               ],

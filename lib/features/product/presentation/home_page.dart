@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../domain/product_controller.dart';
+import 'product_ui.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -75,7 +76,7 @@ class HomePage extends StatelessWidget {
         ),
         if (!profile.hasCurrentDiscomfort) ...[
           const SizedBox(height: 20),
-          const _SectionHeading(title: '快捷开始', eyebrow: 'MOVE YOUR WAY'),
+          const ProductSectionTitle(title: '快捷开始', eyebrow: 'MOVE YOUR WAY'),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -102,7 +103,7 @@ class HomePage extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 20),
-        const _SectionHeading(title: '今日补给', eyebrow: 'DAILY FUEL'),
+        const ProductSectionTitle(title: '今日补给', eyebrow: 'DAILY FUEL'),
         const SizedBox(height: 10),
         _NutritionCard(
           title: nutrition.title,
@@ -150,39 +151,49 @@ class _Greeting extends StatelessWidget {
   final VoidCallback onEditProfile;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _greetingText(),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF718078),
-              ),
+      Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greetingText(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF718078),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '为「$goal」动起来',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                    color: AppTheme.ink,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 3),
-            Text(
-              '为「$goal」动起来',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.6,
-                color: AppTheme.ink,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            onPressed: onEditProfile,
+            tooltip: '修改档案',
+            icon: const Icon(Icons.person_outline_rounded),
+          ),
+        ],
       ),
+      const SizedBox(height: 8),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: connected ? const Color(0xFFE9E9FF) : const Color(0xFFE9EFEA),
+          borderRadius: AppRadius.pill,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -203,12 +214,6 @@ class _Greeting extends StatelessWidget {
             ),
           ],
         ),
-      ),
-      const SizedBox(width: 2),
-      IconButton(
-        onPressed: onEditProfile,
-        tooltip: '修改档案',
-        icon: const Icon(Icons.person_outline_rounded),
       ),
     ],
   );
@@ -245,7 +250,7 @@ class _TodayTrainingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.zero,
+    borderRadius: AppRadius.hero,
     child: DecoratedBox(
       decoration: const BoxDecoration(gradient: AppTheme.heroGradient),
       child: Stack(
@@ -269,7 +274,12 @@ class _TodayTrainingCard extends StatelessWidget {
                   children: [
                     _DarkBadge(label: stage.toUpperCase()),
                     const SizedBox(width: 8),
-                    _DarkBadge(label: source),
+                    _DarkBadge(
+                      label: source,
+                      icon: source == 'AI 生成'
+                          ? Icons.auto_awesome_rounded
+                          : Icons.layers_outlined,
+                    ),
                     const Spacer(),
                     const Icon(
                       Icons.fitness_center_rounded,
@@ -310,22 +320,11 @@ class _TodayTrainingCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.energy,
-                      foregroundColor: AppTheme.ink,
-                      padding: const EdgeInsets.symmetric(vertical: 17),
-                    ),
-                    onPressed: busy ? null : onStart,
-                    icon: Icon(
-                      busy
-                          ? Icons.hourglass_top_rounded
-                          : Icons.play_arrow_rounded,
-                    ),
-                    label: Text(busy ? '正在打开…' : '开始今日训练'),
-                  ),
+                PrimaryActionButton(
+                  label: '开始今日训练',
+                  icon: Icons.play_arrow_rounded,
+                  loading: busy,
+                  onPressed: busy ? null : onStart,
                 ),
               ],
             ),
@@ -353,24 +352,35 @@ class _DecorativeRing extends StatelessWidget {
 }
 
 class _DarkBadge extends StatelessWidget {
-  const _DarkBadge({required this.label});
+  const _DarkBadge({required this.label, this.icon});
 
   final String label;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
     decoration: BoxDecoration(
       color: const Color(0x1FFFFFFF),
+      borderRadius: AppRadius.pill,
       border: Border.all(color: const Color(0x24FFFFFF)),
     ),
-    child: Text(
-      label,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-      ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 12, color: Colors.white),
+          const SizedBox(width: 4),
+        ],
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -384,7 +394,10 @@ class _MetricPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: const Color(0x18FFFFFF)),
+    decoration: const BoxDecoration(
+      color: Color(0x18FFFFFF),
+      borderRadius: AppRadius.medium,
+    ),
     child: Text.rich(
       TextSpan(
         children: [
@@ -428,6 +441,7 @@ class _RestCard extends StatelessWidget {
               color: discomfort
                   ? const Color(0xFFFFEEE8)
                   : const Color(0xFFE8F3EC),
+              borderRadius: AppRadius.medium,
             ),
             child: Icon(
               discomfort
@@ -542,34 +556,6 @@ class _CompactStat extends StatelessWidget {
   );
 }
 
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title, required this.eyebrow});
-
-  final String title;
-  final String eyebrow;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.end,
-    children: [
-      Text(title, style: AppText.sectionTitle),
-      const SizedBox(width: 8),
-      Padding(
-        padding: const EdgeInsets.only(bottom: 2),
-        child: Text(
-          eyebrow,
-          style: const TextStyle(
-            color: Color(0xFF8B9790),
-            fontSize: 8,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.0,
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
 class _QuickAction extends StatelessWidget {
   const _QuickAction({
     required this.icon,
@@ -589,7 +575,7 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) => Card(
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.zero,
+      borderRadius: AppRadius.large,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -597,7 +583,10 @@ class _QuickAction extends StatelessWidget {
             Container(
               width: 42,
               height: 42,
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.11)),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.11),
+                borderRadius: AppRadius.medium,
+              ),
               child: Icon(icon, color: color, size: 21),
             ),
             const SizedBox(width: 11),
@@ -642,7 +631,10 @@ class _NutritionCard extends StatelessWidget {
           Container(
             width: 48,
             height: 58,
-            decoration: BoxDecoration(color: const Color(0xFFFFF3D8)),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFF3D8),
+              borderRadius: AppRadius.medium,
+            ),
             child: const Icon(
               Icons.restaurant_menu_rounded,
               color: Color(0xFFAA7017),
@@ -656,7 +648,14 @@ class _NutritionCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(child: Text(title, style: AppText.cardTitle)),
-                    Text(source, style: AppText.caption),
+                    SourceBadge(
+                      label: source,
+                      kind: source == 'AI 生成'
+                          ? SourceBadgeKind.agent
+                          : source == '本地模板'
+                          ? SourceBadgeKind.local
+                          : SourceBadgeKind.service,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 5),
@@ -689,31 +688,50 @@ class _SourceNotice extends StatelessWidget {
   final String? error;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    decoration: BoxDecoration(color: const Color(0xFFEAF0EB)),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Icon(
-          Icons.verified_user_outlined,
-          size: 16,
-          color: AppTheme.primary,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
+  Widget build(BuildContext context) {
+    final color = error != null
+        ? AppTheme.error
+        : fallback
+        ? AppTheme.mockBadge
+        : AppTheme.primary;
+    final background = error != null
+        ? const Color(0xFFFFEEE8)
+        : fallback
+        ? const Color(0xFFFFF8E9)
+        : const Color(0xFFEAF0EB);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: AppRadius.medium,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
             error != null
-                ? 'Agent 状态：$error'
-                : localOnly
-                ? '本地模式 · 未发送训练数据'
+                ? Icons.error_outline_rounded
                 : fallback
-                ? '服务暂不可用，当前展示本地模板。'
-                : 'AI 建议已连接；训练事实仍以端侧记录为准。',
-            style: AppText.caption,
+                ? Icons.layers_outlined
+                : Icons.verified_user_outlined,
+            size: 16,
+            color: color,
           ),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              error != null
+                  ? 'Agent 状态：$error'
+                  : localOnly
+                  ? '本地模式 · 未发送训练数据'
+                  : fallback
+                  ? '服务暂不可用，当前展示本地模板。'
+                  : 'AI 建议已连接；训练事实仍以端侧记录为准。',
+              style: AppText.caption,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -10,6 +10,7 @@ import 'home_page.dart';
 import 'nutrition_page.dart';
 import 'onboarding_page.dart';
 import 'plan_page.dart';
+import 'product_ui.dart';
 import 'session_summary_page.dart';
 import 'agent_settings_page.dart';
 import 'coach_chat_page.dart';
@@ -66,7 +67,10 @@ class _ProductShellState extends State<ProductShell> {
                   Container(
                     width: 44,
                     height: 44,
-                    color: const Color(0xFFE5F0E9),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE5F0E9),
+                      borderRadius: AppRadius.medium,
+                    ),
                     child: const Icon(
                       Icons.directions_run_rounded,
                       color: AppTheme.primary,
@@ -93,7 +97,10 @@ class _ProductShellState extends State<ProductShell> {
                   leading: Container(
                     width: 40,
                     height: 40,
-                    color: const Color(0xFFEAF0EB),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEAF0EB),
+                      borderRadius: AppRadius.small,
+                    ),
                     child: const Icon(
                       Icons.accessibility_new,
                       color: AppTheme.primary,
@@ -111,7 +118,10 @@ class _ProductShellState extends State<ProductShell> {
                   leading: Container(
                     width: 40,
                     height: 40,
-                    color: const Color(0xFFECEBFF),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFECEBFF),
+                      borderRadius: AppRadius.small,
+                    ),
                     child: const Icon(Icons.fitness_center, color: AppTheme.ai),
                   ),
                   title: const Text('俯卧撑'),
@@ -193,7 +203,22 @@ class _ProductShellState extends State<ProductShell> {
     animation: widget.controller,
     builder: (context, _) {
       if (widget.controller.loading) {
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        return const Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: AppSpacing.pagePadding,
+                child: SizedBox(
+                  width: 420,
+                  child: LoadingState(
+                    title: '正在准备你的训练空间',
+                    body: '正在读取本地档案、训练记录和教练配置。',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
       }
       final profile = widget.controller.profile;
       if (profile == null || editing) {
@@ -233,7 +258,10 @@ class _ProductShellState extends State<ProductShell> {
               Container(
                 width: 34,
                 height: 34,
-                decoration: BoxDecoration(gradient: AppTheme.heroGradient),
+                decoration: const BoxDecoration(
+                  gradient: AppTheme.heroGradient,
+                  borderRadius: AppRadius.medium,
+                ),
                 child: const Icon(
                   Icons.motion_photos_on_rounded,
                   size: 20,
@@ -279,7 +307,15 @@ class _ProductShellState extends State<ProductShell> {
             ),
           ],
         ),
-        body: SafeArea(child: screens[tab]),
+        body: SafeArea(
+          child: Column(
+            children: [
+              if (widget.controller.refreshing)
+                const LinearProgressIndicator(minHeight: 2),
+              Expanded(child: screens[tab]),
+            ],
+          ),
+        ),
         bottomNavigationBar: DecoratedBox(
           decoration: const BoxDecoration(
             color: Colors.white,
